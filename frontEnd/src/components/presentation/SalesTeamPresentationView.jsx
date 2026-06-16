@@ -44,7 +44,7 @@ const buildPeriodSalesByRep = (rows = []) => {
     const key = label.toUpperCase();
     const current = groups.get(key) || { label, sales: 0, gk: 0, deals: 0, companies: new Set() };
     current.sales += Number(row.grossSales || row.sales || 0);
-    current.gk += Number(row.salesmanGk || row.gk || row.finalGk || 0);
+    current.gk += Number(row.fob || row.salesmanGk || row.gk || row.finalGk || 0);
     current.deals += 1;
     const companyName = String(row.clientName || row.companyName || row.name || '').trim().toUpperCase();
     if (companyName) current.companies.add(companyName);
@@ -83,7 +83,7 @@ const buildTeamPresentationData = (liveData, metric = 'all', filters = {}) => {
   const sortKey = metric === 'sales' ? 'sales' : 'gk';
   const ranked = [...liveReps].sort((a, b) => (Number(b[sortKey]) || 0) - (Number(a[sortKey]) || 0));
   const totalSales = ranked.reduce((sum, rep) => sum + (Number(rep.sales) || 0), 0);
-  const totalGk = ranked.reduce((sum, rep) => sum + (Number(rep.gk) || 0), 0);
+  const totalGk = periodRows.reduce((sum, row) => sum + Number(row.fob || 0), 0);
   const totalDeals = ranked.reduce((sum, rep) => sum + (Number(rep.deals) || 0), 0);
   const topRep = ranked[0];
 

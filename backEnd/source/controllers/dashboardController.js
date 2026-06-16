@@ -28,6 +28,11 @@ const toNumber = value => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const resolveGkFromFob = (gkValue, fobValue) => {
+  const gk = toNumber(gkValue);
+  return gk !== 0 ? gk : toNumber(fobValue);
+};
+
 const normalize = value => String(value || '').trim();
 const upper = value => normalize(value).toUpperCase();
 const normalizeHeader = value => normalize(value)
@@ -546,7 +551,7 @@ const buildAnalytics = (batch, query = {}) => {
   const validProducts = products.filter(record => productDisplayName(record));
 
   const totalGrossSales = sales.reduce((sum, record) => sum + toNumber(record.grossSales), 0);
-  const totalGk = sales.reduce((sum, record) => sum + toNumber(record.finalGk || record.salesmanGk), 0);
+  const totalGk = sales.reduce((sum, record) => sum + resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob), 0);
   const totalFob = sales.reduce((sum, record) => sum + toNumber(record.fob), 0);
   const closedDeals = sales.length;
   const uniqueClients = new Set(sales.map(record => entityKey(record.clientName)).filter(Boolean)).size;
@@ -556,7 +561,7 @@ const buildAnalytics = (batch, query = {}) => {
       .filter(n => n && n !== 'Unassigned')
   ).size;
   const monthly = groupTimeRecords(sales, record => monthKey(record.date), record => record.grossSales);
-  const monthlyGk = groupTimeRecords(sales, record => monthKey(record.date), record => record.finalGk || record.salesmanGk);
+  const monthlyGk = groupTimeRecords(sales, record => monthKey(record.date), record => resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob));
   const repPerformance = groupRecords(sales, record => resolveRep(record), record => record.grossSales);
   const productRevenue = groupProductRecords(validProducts, record => record.amount);
   const productPieces = groupProductRecords(validProducts, record => record.quantity);
@@ -597,7 +602,7 @@ const buildAnalytics = (batch, query = {}) => {
           ? dayKey
           : monthKey;
   const salesPerformanceTrend = groupTimeRecords(sales, record => performanceKey(record.date), record => record.grossSales);
-  const gkPerformanceTrend = groupTimeRecords(sales, record => performanceKey(record.date), record => record.finalGk || record.salesmanGk);
+  const gkPerformanceTrend = groupTimeRecords(sales, record => performanceKey(record.date), record => resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob));
   const salesPerformanceSeries = salesPerformanceTrend.map(item => ({
     label: item.name,
     sales: item.value,
@@ -653,15 +658,15 @@ const buildAnalytics = (batch, query = {}) => {
       monthlySalesTrend: monthly.map(item => ({ month: item.name, sales: item.value })),
       monthlyGkTrend: monthlyGk.map(item => ({ month: item.name, gk: item.value })),
       dailySalesTrend: groupTimeRecords(sales, record => record.date, record => record.grossSales),
-      dailyGkTrend: groupTimeRecords(sales, record => record.date, record => record.finalGk || record.salesmanGk),
+      dailyGkTrend: groupTimeRecords(sales, record => record.date, record => resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob)),
       weeklySalesTrend: groupTimeRecords(sales, record => weekKey(record.date), record => record.grossSales),
-      weeklyGkTrend: groupTimeRecords(sales, record => weekKey(record.date), record => record.finalGk || record.salesmanGk),
+      weeklyGkTrend: groupTimeRecords(sales, record => weekKey(record.date), record => resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob)),
       salesPerformanceSeries,
       salesByRep: repPerformance,
       top10SalesReps: repPerformance.slice(0, 10),
       salesPerBranch: groupRecords(sales, record => record.branch, record => record.grossSales),
       salesPerClientType: groupRecords(sales, record => record.clientType, record => record.grossSales),
-      gkPerClientType: groupRecords(sales, record => record.clientType, record => record.finalGk || record.salesmanGk),
+      gkPerClientType: groupRecords(sales, record => record.clientType, record => resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob)),
       fobPerBranch: groupRecords(sales, record => record.branch, record => record.fob),
       counterDistribution,
       salesHeatmapByDay: groupRecords(sales, record => dayName(record.date), record => record.grossSales),
@@ -678,7 +683,7 @@ const buildAnalytics = (batch, query = {}) => {
       termsDistribution,
       salesPerTerms: groupRecords(sales, record => record.terms, record => record.grossSales),
       mostUsedTerms: groupRecords(sales, record => record.terms, () => 1),
-      gkPerTerms: groupRecords(sales, record => record.terms, record => record.finalGk || record.salesmanGk),
+      gkPerTerms: groupRecords(sales, record => record.terms, record => resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob)),
       topSellingProducts: productTonnage,
       productRevenueBreakdown: productRevenue,
       productQuantitySold: productPieces,
@@ -700,7 +705,7 @@ const buildAnalytics = (batch, query = {}) => {
       repPerformance: repPerformance.map(item => {
         const repRows = sales.filter(record => entityKey(resolveRep(record)) === entityKey(item.name));
         const closed = repRows.length;
-        const gk = repRows.reduce((sum, record) => sum + toNumber(record.salesmanGk || record.finalGk), 0);
+        const gk = repRows.reduce((sum, record) => sum + resolveGkFromFob(record.salesmanGk || record.finalGk, record.fob), 0);
         return {
           salesRep: item.name,
           orders: repRows.length,
@@ -1125,10 +1130,10 @@ const mapSheetRowsToSalesRecords = rows => {
       return date && hasIdentity && hasAmount;
     })
     .map(row => {
-    const grossSales = toNumber(val(row, idx.grossSales));
-    const finalGk = toNumber(val(row, idx.finalGk));
-    const salesmanGk = toNumber(val(row, idx.salesmanGk));
-    return {
+      const grossSales = toNumber(val(row, idx.grossSales));
+      const salesmanGk = resolveGkFromFob(val(row, idx.salesmanGk), val(row, idx.fob));
+      const finalGk = toNumber(val(row, idx.finalGk)) || salesmanGk;
+      return {
       date: normalizeDateString(val(row, idx.date)),
       branch: val(row, idx.branch) || null,
       repCode: val(row, idx.repCode) || null,
@@ -1147,8 +1152,8 @@ const mapSheetRowsToSalesRecords = rows => {
       closedDeal: grossSales > 0 ? 'Yes' : 'No',
       leadSource: val(row, idx.leadSource) || null,
       remarks: val(row, idx.remarks) || null,
-    };
-  });
+      };
+    });
 };
 
 const mapSheetRowsToProductRecords = rows => {

@@ -50,7 +50,7 @@ const compactCurrency = value => {
 const buildLiveAnalytics = liveData => {
   if (!Array.isArray(liveData?.rawRows) || !liveData.rawRows.length) return null;
   const sales = toNumber(liveData.totals?.sales);
-  const gk = toNumber(liveData.totals?.gk);
+  const gk = toNumber(liveData.totals?.fob ?? liveData.totals?.gk);
   const leads = toNumber(liveData.totals?.rows);
   const closed = liveData.rawRows.filter(row => toNumber(row.grossSales || row.sales) > 0).length;
   const topSource = liveData.sourceData?.[0];

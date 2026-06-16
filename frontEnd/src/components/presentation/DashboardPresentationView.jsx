@@ -50,11 +50,6 @@ const formatCompactCurrency = value => {
   return `PHP ${Math.round(amount).toLocaleString()}`;
 };
 
-const formatShare = value => {
-  const share = toNumber(value);
-  return Number.isInteger(share) ? String(share) : share.toFixed(1);
-};
-
 const normalizeDateRangeLabel = value => {
   const label = String(value || 'All Time').trim();
   const lower = label.toLowerCase();
@@ -1396,7 +1391,7 @@ function Counter({ data, enlarged = false }) {
                   setTooltip({
                     ...getLocalPointer(event),
                     title: label,
-                    lines: [`Total: ${value.toLocaleString()}`, `Share: ${formatShare(counter.percentage)}%`]
+                    lines: [`Total: ${value.toLocaleString()}`]
                   });
                 }}
               >

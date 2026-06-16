@@ -21,9 +21,10 @@ const getTimelineCsvPaths = () => {
 };
 
 const toNumber = value => {
-  const parsed = Number(String(value ?? '')
+  const str = String(value ?? '')
     .replace(/\((.*)\)/, '-$1')
-    .replace(/[^0-9.-]/g, ''));
+    .replace(/[^0-9.-]/g, '');
+  const parsed = Number(str);
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
@@ -56,13 +57,17 @@ const parseTimelineRows = csvText => {
   };
 
   return rows.slice(headerIndex + 1)
-    .map(row => ({
-      recordDate: parseDate(row[idx.date]),
-      invoiceNumber: String(row[idx.invoiceNumber] ?? '').trim() || null,
-      customerName: String(row[idx.customerName] ?? '').trim() || null,
-      salesmanGk: toNumber(row[idx.salesmanGk]),
-      amount: toNumber(row[idx.amount]),
-    }))
+    .map(row => {
+      const salesmanGkRaw = String(row[idx.salesmanGk] ?? '').trim();
+      const salesmanGk = salesmanGkRaw ? toNumber(salesmanGkRaw) : 0;
+      return {
+        recordDate: parseDate(row[idx.date]),
+        invoiceNumber: String(row[idx.invoiceNumber] ?? '').trim() || null,
+        customerName: String(row[idx.customerName] ?? '').trim() || null,
+        salesmanGk,
+        amount: toNumber(row[idx.amount]),
+      };
+    })
     .filter(record => record.recordDate && (
       record.invoiceNumber ||
       record.customerName ||

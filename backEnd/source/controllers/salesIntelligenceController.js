@@ -49,6 +49,11 @@ const toNumber = value => {
   return negativeParentheses ? -parsed : parsed;
 };
 
+const resolveGkFromFob = (gkValue, fobValue) => {
+  const gk = toNumber(gkValue);
+  return gk !== 0 ? gk : toNumber(fobValue);
+};
+
 const parseDate = value => {
   const text = normalize(value);
   if (!text || /^[A-Za-z]+$/.test(text)) return null;
@@ -165,7 +170,7 @@ const parseSalesOrders = rows => {
       num: normalize(row[3]) || null,
       name: normalize(row[4]) || null,
       fob: toNumber(row[5]),
-      salesmanGK: toNumber(row[6]),
+      salesmanGK: resolveGkFromFob(row[6], row[5]),
       weight: toNumber(row[7]),
       terms: normalize(row[8]) || null,
       counter: normalize(row[9]) || null,
@@ -288,7 +293,7 @@ const buildAnalyticsPayload = async (query = {}) => {
 
   const totalSales = filteredOrders.reduce((sum, row) => sum + toNumber(row.amount), 0);
   const totalWeight = filteredOrders.reduce((sum, row) => sum + toNumber(row.weight), 0);
-  const totalGK = filteredOrders.reduce((sum, row) => sum + toNumber(row.salesmanGK), 0);
+  const totalGK = filteredOrders.reduce((sum, row) => sum + resolveGkFromFob(row.salesmanGK, row.fob), 0);
   const totalQty = filteredProducts.reduce((sum, row) => sum + toNumber(row.qty), 0);
   const totalTons = filteredProducts.reduce((sum, row) => sum + toNumber(row.tons), 0);
   const totalGrossMargin = filteredProducts.reduce((sum, row) => sum + toNumber(row.grossMargin), 0);
@@ -309,7 +314,7 @@ const buildAnalyticsPayload = async (query = {}) => {
     const label = formatMonth(order.date);
     const current = monthlyMap.get(label) || { label, sales: 0, gk: 0 };
     current.sales += toNumber(order.amount);
-    current.gk += toNumber(order.salesmanGK);
+    current.gk += resolveGkFromFob(order.salesmanGK, order.fob);
     monthlyMap.set(label, current);
   });
 

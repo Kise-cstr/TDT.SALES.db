@@ -92,6 +92,11 @@ const normalizePaymentTerm = value => {
   }).join(' ');
 };
 
+const resolveGkFromFob = (gkValue, fobValue) => {
+  const gk = toNumber(gkValue);
+  return gk !== 0 ? gk : toNumber(fobValue);
+};
+
 const normalizeCompanyPerformance = value => {
   const label = String(value || '').trim().toLowerCase();
   if (!label) return 'Retention';
@@ -123,7 +128,7 @@ const buildPresentationCounterData = rows => {
     const companyKey = String(row.clientName || row.companyName || row.name || '').trim().toUpperCase();
     current.count += 1;
     current.sales += toNumber(row.grossSales || row.sales);
-    current.gk += toNumber(row.salesmanGk || row.gk || row.finalGk);
+    current.gk += resolveGkFromFob(row.salesmanGk || row.gk || row.finalGk, row.fob);
     current.reps.add(rowRepLabel(row).toUpperCase());
     if (companyKey) current.companies.add(companyKey);
     totals.set(label, current);
@@ -153,9 +158,10 @@ const buildMetricCards = liveData => {
     return metricCards;
   }
   const topRep = liveData.salesByRep?.[0];
+  const totalFob = toNumber(liveData.totals?.fob);
   const cards = [
     { metric: 'sales', title: 'Total Gross Sales', value: formatCurrency(liveData.totals?.sales), trend: 'up', trendValue: 'CSV', icon: 'dollar' },
-    { metric: 'gk', title: 'Total GK', value: formatCurrency(liveData.totals?.gk), trend: 'up', trendValue: 'CSV', icon: 'chart' },
+    { metric: 'gk', title: 'GK Value', value: formatCurrency(totalFob), trend: 'up', trendValue: 'Computed FOB', icon: 'chart' },
     { metric: 'leads', title: 'Total Leads Gathered', value: String(liveData.totals?.rows || 0), trend: 'up', trendValue: 'rows', icon: 'users' },
     { metric: 'clients', title: 'Number of Clients', value: String(liveData.totals?.companies || 0), trend: 'up', trendValue: 'unique company names', icon: 'users' },
     { metric: 'top-rep', title: 'Top Performing Rep', value: topRep?.label || 'N/A', trend: 'up', trendValue: topRep ? formatCurrency(topRep.sales) : 'PHP 0', icon: 'target' }
@@ -291,7 +297,7 @@ const buildPresentationTerms = rows => {
     }));
 };
 
-const buildCompanyRankingData = liveData => {
+const buildCompanySummaries = liveData => {
   const rows = Array.isArray(liveData?.rawRows) ? liveData.rawRows : [];
   const companies = new Map();
 
@@ -354,8 +360,24 @@ const buildCompanyRankingData = liveData => {
         salesRep: topRep
       };
     })
-    .sort((a, b) => b.totalSalesAmount - a.totalSalesAmount)
-    .slice(0, 10);
+    .sort((a, b) => b.totalSalesAmount - a.totalSalesAmount);
+};
+
+const buildCompanyRankingData = (liveData, limit = 10) => (
+  buildCompanySummaries(liveData).slice(0, limit)
+);
+
+const buildCompanyPerformanceCounters = companies => {
+  const counts = new Map(counterBuckets.map(label => [label, { label, count: 0 }]));
+
+  (Array.isArray(companies) ? companies : []).forEach(company => {
+    const bucket = normalizeCompanyPerformance(company.salesPerformance);
+    const current = counts.get(bucket) || { label: bucket, count: 0 };
+    current.count += 1;
+    counts.set(bucket, current);
+  });
+
+  return counterBuckets.map(label => counts.get(label) || { label, count: 0 });
 };
 
 const getRepRankingMetric = (rep, metric = 'all') => {
@@ -399,7 +421,7 @@ const buildRepRows = (rows = []) => {
     };
 
     current.sales += toNumber(row.grossSales || row.sales);
-    current.gk += toNumber(row.salesmanGk || row.gk || row.finalGk);
+    current.gk += resolveGkFromFob(row.salesmanGk || row.gk || row.finalGk, row.fob);
     current.deals += 1;
     current.leads += 1;
     const companyName = String(row.clientName || row.companyName || row.name || '').trim().toUpperCase();
@@ -429,7 +451,7 @@ const buildRepRoster = (allRows = [], activeRows = []) => {
       label,
       name: label,
       sales: Number(active.sales) || 0,
-      gk: Number(active.gk) || 0,
+    gk: Number(active.gk) || 0,
       leads: Number(active.leads) || 0,
       deals: Number(active.deals) || 0
     });
@@ -454,10 +476,12 @@ const buildPresentationData = analytics => {
   const rawRows = Array.isArray(liveData?.rawRows) ? liveData.rawRows : [];
   const activeDealRows = getActiveDealRows(rawRows, analytics.filters);
   const dealsClosed = activeDealRows.length;
+  const companySummaries = buildCompanySummaries(liveData);
   const periodTotals = activeDealRows.reduce((totals, row) => ({
     sales: totals.sales + toNumber(row.grossSales || row.sales),
-    gk: totals.gk + toNumber(row.salesmanGk || row.gk || row.finalGk)
-  }), { sales: 0, gk: 0 });
+    gk: totals.gk + resolveGkFromFob(row.salesmanGk || row.gk || row.finalGk, row.fob),
+    fob: totals.fob + toNumber(row.fob)
+  }), { sales: 0, gk: 0, fob: 0 });
   const useTimelineComparison = analytics.filters?.timeline !== 'Disable' && analytics.timelineSalesComparison?.length;
   const salesComparisonSource = useTimelineComparison ? analytics.timelineSalesComparison : analytics.salesPerformance;
   const salesComparison = (salesComparisonSource || []).map(row => ({
@@ -467,7 +491,7 @@ const buildPresentationData = analytics => {
     leads: toNumber(row.leads),
     reps: toNumber(row.reps)
   }));
-  const companies = (analytics.companies || []).map((row, index) => ({
+  const companies = companySummaries.slice(0, 10).map((row, index) => ({
     rank: index + 1,
     companyName: row.companyName || row.label || row.name || 'Unassigned',
     amount: formatCompactCurrency(row.totalSalesAmount ?? row.value),
@@ -478,7 +502,7 @@ const buildPresentationData = analytics => {
     salesRep: row.salesRep || 'Unassigned',
     color: productColors[index % productColors.length]
   }));
-  const counters = buildPresentationCounters(buildPresentationCounterData(activeDealRows));
+  const counters = buildPresentationCounters(buildCompanyPerformanceCounters(companySummaries));
   const presentationProducts = buildPresentationProducts(analytics.processedProductBreakdownData.rows);
   const presentationTerms = buildPresentationTerms(activeDealRows);
   const sharedProductTotals = {
@@ -507,6 +531,7 @@ const buildPresentationData = analytics => {
       ...rep,
       fullName: rep.label
     }));
+  const activeClientCount = companySummaries.length;
   const rankedReps = buildMetricSortedReps(reps, repMetric).map((rep, index) => ({
     rank: index + 1,
     name: rep.fullName || rep.label || 'Unassigned',
@@ -521,8 +546,8 @@ const buildPresentationData = analytics => {
       ...(isFullCalendarMonthRange ? [{ label: 'Total Tons', value: formatTons(sharedProductTotals.tons), note: 'Total steel tonnage' }] : []),
       { label: 'Number of Transactions', value: String(dealsClosed), note: '' },
       { label: 'Total Gross Sales', value: formatCompactCurrency(periodTotals.sales), note: `${activeDealRows.length} period rows` },
-      { label: 'GK Value', value: formatCompactCurrency(periodTotals.gk), note: 'From uploaded GK columns' },
-      { label: 'Number of Clients', value: String(liveData.totals?.companies || 0), note: 'Unique company names' }
+      { label: 'GK Value', value: formatCompactCurrency(periodTotals.fob), note: 'Computed from FOB' },
+      { label: 'Number of Clients', value: String(activeClientCount), note: 'Unique company names' }
   ];
 
   return {

@@ -158,6 +158,7 @@ model SalesProduct {
   grossMargin    Float?
   grossMarginPct Float?
   weightKgs      Float?
+  Kgs            Float?
   tons           Float?
   createdAt      DateTime @default(now())
 }

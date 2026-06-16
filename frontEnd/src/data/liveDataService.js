@@ -25,8 +25,33 @@ const toNumber = value => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   const raw = normalize(value);
   if (!raw || /^-+$/.test(raw.replace(/\s/g, ''))) return 0;
-  const parsed = Number(raw.replace(/\((.*)\)/, '-$1').replace(/[^0-9.-]/g, ''));
+  
+  // Handle percentage expressions like "6%(2469.21)" or "5.04%(51171.58)"
+  const percentMatch = raw.match(/\d+\.?\d*%\(?\s*\(?([\d,]+\.?\d*)\)?/);
+  if (percentMatch) {
+    const numStr = percentMatch[1].replace(/,/g, '');
+    const parsed = Number(numStr);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  
+  // Handle expressions like "92901.14/5.7" by taking the first number
+  const divisionMatch = raw.match(/^([\d,]+\.?\d*)\s*\//);
+  if (divisionMatch) {
+    const numStr = divisionMatch[1].replace(/,/g, '');
+    const parsed = Number(numStr);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  
+  // Remove commas from numbers (e.g., "5,472" -> "5472") and strip non-numeric characters
+  // while preserving decimal points and hyphens for negative numbers
+  const cleaned = raw.replace(/,/g, '');
+  const parsed = Number(cleaned.replace(/\((.*)\)/, '-$1').replace(/[^0-9.-]/g, ''));
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const resolveGkFromFob = (gkValue, fobValue) => {
+  const gk = toNumber(gkValue);
+  return gk !== 0 ? gk : toNumber(fobValue);
 };
 
 const normalizeDateString = value => {
@@ -226,8 +251,9 @@ const rowsToSalesRecords = rows => {
     .map(row => {
       const date = normalizeDateString(val(row, idx.date));
       const grossSales = toNumber(val(row, idx.amount));
+      const fob = toNumber(val(row, idx.fob));
       const finalGk = toNumber(val(row, idx.finalGk));
-      const salesmanGk = toNumber(val(row, idx.salesmanGk));
+      const salesmanGk = resolveGkFromFob(val(row, idx.salesmanGk), fob);
       const repCode = normalizeSalesRepCode(val(row, idx.repCode));
       const repName = '';
       const salesRep = getSalesRepNameFromCode(repCode) || repCode || 'Unassigned';
@@ -244,11 +270,11 @@ const rowsToSalesRecords = rows => {
         leadSource: normalizeName(val(row, idx.leadSource)),
         grossSales,
         sales: grossSales,
+        fob,
         finalGk,
         salesmanGk,
         gk: salesmanGk || finalGk,
         weight: toNumber(val(row, idx.weight)),
-        fob: toNumber(val(row, idx.fob)),
         counter: normalizeName(val(row, idx.counter)),
         memo: normalizeName(val(row, idx.memo)),
         closedDeal: grossSales > 0 ? 'Yes' : 'No'
@@ -549,6 +575,7 @@ const buildProductData = records => {
 const buildLiveData = (records, productRecords = [], options = {}) => {
   const totalSales = records.reduce((sum, record) => sum + record.grossSales, 0);
   const totalGk = records.reduce((sum, record) => sum + record.gk, 0);
+  const totalFob = records.reduce((sum, record) => sum + toNumber(record.fob), 0);
   const totalTons = productRecords.reduce((sum, record) => sum + productTons(record), 0);
   const totalProductQuantity = productRecords.reduce((sum, record) => sum + toNumber(record.quantity), 0);
   const repRoster = buildRepRoster(records);
@@ -595,6 +622,7 @@ const buildLiveData = (records, productRecords = [], options = {}) => {
       rows: records.length,
       sales: totalSales,
       gk: totalGk,
+      fob: totalFob,
       tons: Math.round(totalTons * 10) / 10,
       inventoryQuantity: Math.round(totalProductQuantity),
       companies: companyGroups.length,
@@ -701,8 +729,9 @@ export function saveDashboardBatchData(batch = {}, options = {}) {
   const salesRecords = (Array.isArray(batch.salesRecords) ? batch.salesRecords : []).map(record => {
     const repCode = normalizeName(record.repCode);
     const grossSales = toNumber(record.grossSales);
+    const fob = toNumber(record.fob);
     const finalGk = toNumber(record.finalGk);
-    const salesmanGk = toNumber(record.salesmanGk);
+    const salesmanGk = resolveGkFromFob(record.salesmanGk, fob);
     return {
       date: normalizeDateString(record.date),
       branch: normalizeName(record.branch),
@@ -716,11 +745,11 @@ export function saveDashboardBatchData(batch = {}, options = {}) {
       leadSource: normalizeName(record.leadSource),
       grossSales,
       sales: grossSales,
+      fob,
       finalGk,
       salesmanGk,
       gk: salesmanGk || finalGk,
       weight: toNumber(record.weight),
-      fob: toNumber(record.fob),
       counter: normalizeName(record.counter),
       memo: normalizeName(record.remarks),
       closedDeal: record.closedDeal || (grossSales > 0 ? 'Yes' : 'No')
