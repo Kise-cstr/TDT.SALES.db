@@ -295,6 +295,13 @@ export function AuthProvider({ children }) {
     const result = await updateCurrentUserProfile(profile);
     if (result.ok) {
       setUser(result.user);
+      setUsers(current => (
+        current.map(account => (
+          account.id === result.user.id || account.email?.toLowerCase() === result.user.email?.toLowerCase()
+            ? { ...account, ...result.user }
+            : account
+        ))
+      ));
       setAdminUsers([]);
     }
     return result;

@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.001e528b.css",
-    "main.js": "/static/js/main.47af8faf.js",
+    "main.js": "/static/js/main.0f7bc275.js",
     "static/css/14.8cbc6f55.chunk.css": "/static/css/14.8cbc6f55.chunk.css",
     "static/js/14.dcfaf583.chunk.js": "/static/js/14.dcfaf583.chunk.js",
     "static/js/896.b8d5ba08.chunk.js": "/static/js/896.b8d5ba08.chunk.js",
@@ -36,7 +36,7 @@
     "static/media/tdt_logo.png": "/static/media/tdt_logo.07f14da141f49ce6dcf5.png",
     "index.html": "/index.html",
     "main.001e528b.css.map": "/static/css/main.001e528b.css.map",
-    "main.47af8faf.js.map": "/static/js/main.47af8faf.js.map",
+    "main.0f7bc275.js.map": "/static/js/main.0f7bc275.js.map",
     "14.8cbc6f55.chunk.css.map": "/static/css/14.8cbc6f55.chunk.css.map",
     "14.dcfaf583.chunk.js.map": "/static/js/14.dcfaf583.chunk.js.map",
     "896.b8d5ba08.chunk.js.map": "/static/js/896.b8d5ba08.chunk.js.map",
@@ -68,6 +68,6 @@
   },
   "entrypoints": [
     "static/css/main.001e528b.css",
-    "static/js/main.47af8faf.js"
+    "static/js/main.0f7bc275.js"
   ]
 }
