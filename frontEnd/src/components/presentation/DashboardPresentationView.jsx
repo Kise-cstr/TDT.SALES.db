@@ -1365,7 +1365,7 @@ function Counter({ data, enlarged = false }) {
                   x={padding.left - 10}
                   y={y + 4}
                   textAnchor="end"
-                  fill="#475569"
+                  fill="var(--present-muted)"
                   fontSize={12}
                   fontWeight="800"
                 >
@@ -1385,7 +1385,7 @@ function Counter({ data, enlarged = false }) {
             const isMuted = hasActiveCounter && activeCounter !== index;
             const centerX = x + barWidth / 2;
             const labelY = height - 12;
-            const labelFill = '#1f2937';
+            const labelFill = 'var(--present-text)';
 
             return (
               <g
@@ -1417,8 +1417,7 @@ function Counter({ data, enlarged = false }) {
                   fill={labelFill}
                   fontSize={12}
                   fontWeight="900"
-                  stroke="rgba(255,255,255,0.6)"
-                  strokeWidth="0.4"
+                  stroke="none"
                 >
                   {label}
                 </text>

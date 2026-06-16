@@ -43,6 +43,12 @@ const toNumber = value => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const parseDateInputValue = value => {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const formatCurrency = value => `PHP ${Math.round(toNumber(value)).toLocaleString()}`;
 
 const formatCompactCurrency = value => {
@@ -480,6 +486,21 @@ const buildPresentationData = analytics => {
     tons: toNumber(liveData.totals?.tons),
     quantity: toNumber(liveData.totals?.inventoryQuantity ?? analytics.processedProductBreakdownData.totals.quantity)
   };
+  const isFullCalendarMonthRange = (() => {
+    const start = parseDateInputValue(analytics.filters?.startDate);
+    const end = parseDateInputValue(analytics.filters?.endDate);
+    if (!start || !end) return false;
+
+    const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
+    const monthEnd = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    return (
+      start.getFullYear() === end.getFullYear() &&
+      start.getMonth() === end.getMonth() &&
+      start.getDate() === 1 &&
+      end.getDate() === monthEnd.getDate() &&
+      monthStart.getTime() === new Date(start.getFullYear(), start.getMonth(), 1).getTime()
+    );
+  })();
   const repMetric = analytics.filters?.metric === 'sales' ? 'sales' : 'gk';
   const reps = buildRepRoster(analytics.liveData?.rawRows || rawRows, activeDealRows)
     .map(rep => ({
@@ -496,7 +517,7 @@ const buildPresentationData = analytics => {
   }));
 
   const kpis = [
-      ...(analytics.filters?.period === 'Monthly' ? [{ label: 'Total Tons', value: formatTons(sharedProductTotals.tons), note: 'Total steel tonnage' }] : []),
+      ...(isFullCalendarMonthRange ? [{ label: 'Total Tons', value: formatTons(sharedProductTotals.tons), note: 'Total steel tonnage' }] : []),
       { label: 'Number of Transactions', value: String(dealsClosed), note: '' },
       { label: 'Total Gross Sales', value: formatCompactCurrency(periodTotals.sales), note: `${activeDealRows.length} period rows` },
       { label: 'GK Value', value: formatCompactCurrency(periodTotals.gk), note: 'From uploaded GK columns' },

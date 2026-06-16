@@ -4650,7 +4650,7 @@ body:has(.presentation-dashboard),
 }
 
 .presentation-dashboard .rankings-card {
-  padding-inline: 0;
+  padding-inline: 20px;
 }
 
 .presentation-dashboard.is-timeline-active .stats-grid-item,

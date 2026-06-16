@@ -538,6 +538,31 @@
   box-shadow: 0 0 18px var(--present-glow), inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
 }
 
+.presentation-dashboard .companies-card .dashboard-card-header,
+.presentation-dashboard .rankings-card .dashboard-card-header {
+  min-width: 0;
+  align-items: center;
+  overflow: hidden;
+}
+
+.presentation-dashboard .companies-card .dashboard-card-header h2,
+.presentation-dashboard .rankings-card .dashboard-card-header h2 {
+  min-width: 0;
+  max-width: calc(100% - 210px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.presentation-dashboard .companies-card .dashboard-card-header p,
+.presentation-dashboard .rankings-card .dashboard-card-header p {
+  max-width: 210px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .presentation-dashboard .companies-card .dashboard-card-header h2,
 .presentation-dashboard .rankings-card .dashboard-card-header h2,
 .presentation-dashboard .companies-card .dashboard-card-header p,
@@ -1656,6 +1681,126 @@ body.presentation-focus-open {
 
 .presentation-dashboard .company-table-list .company-term {
   min-width: 112px;
+}
+
+[data-theme="dark"] .presentation-dashboard .companies-card,
+[data-theme="dark"] .presentation-dashboard .rankings-card {
+  background:
+    radial-gradient(circle at 92% 0%, rgba(209, 96, 2, 0.10), transparent 28%),
+    linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(10, 10, 10, 0.98)),
+    var(--present-panel-deep) !important;
+  border-color: rgba(255, 159, 67, 0.28) !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .companies-card .dashboard-card-header h2,
+[data-theme="dark"] .presentation-dashboard .rankings-card .dashboard-card-header h2,
+[data-theme="dark"] .presentation-dashboard .companies-card .dashboard-card-header p,
+[data-theme="dark"] .presentation-dashboard .rankings-card .dashboard-card-header p {
+  color: var(--present-text) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .company-table-list article {
+  background:
+    linear-gradient(180deg, rgba(27, 27, 27, 0.98), rgba(18, 18, 18, 0.98)) !important;
+  border-color: rgba(255, 140, 0, 0.14) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .company-table-list strong,
+[data-theme="dark"] .presentation-dashboard .company-table-list .company-amount,
+[data-theme="dark"] .presentation-dashboard .company-table-list .company-status,
+[data-theme="dark"] .presentation-dashboard .company-table-list .company-term {
+  color: var(--present-text) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .company-table-list .company-amount {
+  color: var(--present-accent-soft) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .company-table-list .company-status {
+  background: rgba(209, 96, 2, 0.18);
+  color: var(--present-accent-soft) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .company-table-list .company-term {
+  color: rgba(233, 239, 248, 0.82) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .rankings-card .dashboard-card-header p {
+  color: rgba(233, 239, 248, 0.72) !important;
+}
+
+.presentation-dashboard .sales-performance-graph text {
+  fill: var(--present-text) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-performance-graph text {
+  fill: var(--text-main) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .sales-performance-graph text {
+  fill: #f5f5f5 !important;
+}
+
+.presentation-dashboard .rankings-card {
+  padding-top: 16px;
+}
+
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list article,
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list article.is-active,
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list article.is-muted {
+  background:
+    linear-gradient(180deg, rgba(26, 26, 26, 0.98), rgba(14, 14, 14, 0.98)) !important;
+  border: 1px solid rgba(255, 159, 67, 0.16) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list .company-row-left strong,
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list .company-amount,
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list .company-status,
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list .company-term {
+  color: #f5f5f5 !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list .company-amount {
+  color: var(--present-accent-soft) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list .company-status {
+  background: rgba(209, 96, 2, 0.18) !important;
+  color: var(--present-accent-soft) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .companies-card .company-table-list .company-term {
+  color: rgba(229, 231, 235, 0.78) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .rankings-card .dashboard-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .presentation-dashboard .rankings-card .dashboard-card-header h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 190px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .presentation-dashboard .rankings-card .dashboard-card-header p {
+  flex: 0 0 auto;
+  max-width: 190px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .presentation-dashboard .counter-card.is-enlarged .counter-bar-row {
