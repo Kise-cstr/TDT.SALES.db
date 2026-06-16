@@ -283,12 +283,88 @@ function CardHeader({ title, subtitle, action, className = '', onTitleClick }) {
   );
 }
 
-function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate, calendarEndDate }) {
+function TimelineLineGraph({ data }) {
+  const series = (Array.isArray(data) ? data : [])
+    .map(item => ({
+      label: item.label || item.month || '',
+      value: toNumber(item.gross ?? item.sales ?? item.value ?? item.amount)
+    }))
+    .filter(item => item.label);
+
+  if (!series.length) {
+    return (
+      <div className="presentation-timeline-empty">
+        <strong>No timeline data</strong>
+        <span>Upload CSV data with dates to view the line graph.</span>
+      </div>
+    );
+  }
+
+  const width = 480;
+  const height = 210;
+  const padding = { top: 14, right: 14, bottom: 36, left: 42 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const maxValue = Math.max(...series.map(item => item.value), 1);
+  const ticks = 4;
+  const points = series.map((item, index) => {
+    const x = padding.left + (plotWidth * (series.length === 1 ? 0.5 : index / (series.length - 1)));
+    const y = padding.top + plotHeight - ((item.value / maxValue) * plotHeight);
+    return { ...item, x, y };
+  });
+  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  const areaPath = `${linePath} L ${padding.left + plotWidth} ${padding.top + plotHeight} L ${padding.left} ${padding.top + plotHeight} Z`;
+  const chartMaxLabel = formatCompactCurrency(maxValue * 1000000);
+
+  return (
+    <div className="presentation-timeline-chart-wrap">
+      <svg viewBox={`0 0 ${width} ${height}`} className="presentation-timeline-svg" role="img" aria-label="Timeline line graph">
+        <defs>
+          <linearGradient id="timelineAreaFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="rgba(209, 96, 2, 0.42)" />
+            <stop offset="100%" stopColor="rgba(209, 96, 2, 0.04)" />
+          </linearGradient>
+        </defs>
+        {Array.from({ length: ticks + 1 }).map((_, index) => {
+          const y = padding.top + (plotHeight / ticks) * index;
+          return <line key={`grid-${index}`} x1={padding.left} x2={padding.left + plotWidth} y1={y} y2={y} className="presentation-timeline-grid" />;
+        })}
+        <line x1={padding.left} x2={padding.left} y1={padding.top} y2={padding.top + plotHeight} className="presentation-timeline-axis" />
+        <line x1={padding.left} x2={padding.left + plotWidth} y1={padding.top + plotHeight} y2={padding.top + plotHeight} className="presentation-timeline-axis" />
+        <path d={areaPath} className="presentation-timeline-area" />
+        <path d={linePath} className="presentation-timeline-line" />
+        {points.map(point => (
+          <g key={point.label} transform={`translate(${point.x}, ${point.y})`}>
+            <circle r="4.5" className="presentation-timeline-point" />
+          </g>
+        ))}
+        {points.map((point, index) => (
+          <text
+            key={`${point.label}-x`}
+            x={point.x}
+            y={padding.top + plotHeight + 18}
+            textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
+            className="presentation-timeline-label"
+          >
+            {point.label}
+          </text>
+        ))}
+        <text x={padding.left} y={padding.top - 2} textAnchor="start" className="presentation-timeline-max">
+          {chartMaxLabel}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate, calendarEndDate, timelineSeries }) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isTimelinePopupOpen, setIsTimelinePopupOpen] = useState(false);
   const [draftRange, setDraftRange] = useState(normalizeDateRangeLabel(filters.range));
   const [draftStartDate, setDraftStartDate] = useState(filters.startDate || '');
   const [draftEndDate, setDraftEndDate] = useState(filters.endDate || '');
+  const [draftTimeline, setDraftTimeline] = useState(filters.timeline || 'Disable');
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const initialDate = parseDateInputValue(filters.startDate)
       || parseDateInputValue(filters.endDate)
@@ -297,6 +373,7 @@ function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate
     return startOfMonth(initialDate);
   });
   const datePickerRef = useRef(null);
+  const timelinePopupRef = useRef(null);
 
   useEffect(() => {
     const clock = window.setInterval(() => {
@@ -339,6 +416,29 @@ function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [calendarAnchorDate, calendarEndDate, calendarStartDate, filters.endDate, filters.range, filters.startDate, isDatePickerOpen]);
+
+  useEffect(() => {
+    if (!isTimelinePopupOpen) return undefined;
+    setDraftTimeline(filters.timeline || 'Disable');
+
+    const handlePointerDown = event => {
+      if (!timelinePopupRef.current?.contains(event.target)) {
+        setIsTimelinePopupOpen(false);
+      }
+    };
+
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') setIsTimelinePopupOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [filters.timeline, isTimelinePopupOpen]);
 
   const applyDateRange = () => {
     const nextRange = normalizeDateRangeLabel(draftRange);
@@ -412,6 +512,7 @@ function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate
   const liveTime = currentTime.toLocaleTimeString();
   const rangeSummary = getRangeDisplayText(filters);
   const isApplyDisabled = draftRange === 'Custom Range' && (!draftStartDate || !draftEndDate);
+  const timelineLabel = draftTimeline && draftTimeline !== 'Disable' ? draftTimeline : 'Disable';
   return (
     <header className="presentation-header present-header">
       <div className="presentation-brand">
@@ -429,14 +530,6 @@ function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate
 
       <div className="presentation-actions">
         <label className="presentation-header-control">
-          <span>Timeline</span>
-          <select value={filters.timeline || 'Disable'} onChange={event => onFilterChange('timeline', event.target.value)}>
-            {headerTimelineOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        </label>
-        <label className="presentation-header-control">
           <span>Metrics</span>
           <select value={filters.metric} onChange={event => onFilterChange('metric', event.target.value)}>
             {metricOptions.map(option => (
@@ -444,6 +537,50 @@ function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate
             ))}
           </select>
         </label>
+        <div className="presentation-header-control presentation-timeline-control" ref={timelinePopupRef}>
+          <span>Timeline</span>
+          <div className="presentation-timeline-control-row">
+            <button
+              type="button"
+              className="presentation-timeline-trigger"
+              onClick={() => setIsTimelinePopupOpen(current => !current)}
+              aria-label="Open timeline chart"
+            >
+              {timelineLabel}
+            </button>
+          </div>
+          <AnimatePresence>
+            {isTimelinePopupOpen && (
+              <motion.div
+                className="presentation-timeline-popover"
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+              >
+                <div className="presentation-timeline-chart">
+                  <TimelineLineGraph data={timelineSeries} />
+                </div>
+                <div className="presentation-timeline-options" role="list" aria-label="Timeline granularity">
+                  {headerTimelineOptions.map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`presentation-timeline-option${(filters.timeline || 'Disable') === option ? ' is-active' : ''}`}
+                      onClick={() => {
+                        onFilterChange('timeline', option);
+                        setDraftTimeline(option);
+                        if (option !== 'Disable') setIsTimelinePopupOpen(false);
+                      }}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <div className="presentation-header-control presentation-date-control" ref={datePickerRef}>
           <span>Period</span>
           <div className="presentation-date-control-row">
@@ -1349,6 +1486,7 @@ export default function DashboardPresentationView() {
         calendarAnchorDate={calendarDateBounds.earliest || calendarDateBounds.latest || new Date()}
         calendarStartDate={calendarDateBounds.earliest}
         calendarEndDate={calendarDateBounds.latest}
+        timelineSeries={presentationData.salesComparison}
       />
       <StatsGrid data={presentationData.kpis} onFocus={setFocusedPanel} />
 
