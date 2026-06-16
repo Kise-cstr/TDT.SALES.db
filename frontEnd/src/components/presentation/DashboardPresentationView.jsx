@@ -651,6 +651,188 @@ function FocusModal({ panel, onClose }) {
   );
 }
 
+function TimelineLineChart({ rows }) {
+  const chartData = useMemo(() => {
+    const safeRows = Array.isArray(rows) ? rows : [];
+    const values = safeRows.map(row => toNumber(row.sales));
+    const maxValue = Math.max(...values, 1);
+    const width = 980;
+    const height = 420;
+    const padding = { top: 36, right: 32, bottom: 64, left: 64 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+    const step = safeRows.length > 1 ? plotWidth / (safeRows.length - 1) : 0;
+    const points = safeRows.map((row, index) => {
+      const value = toNumber(row.sales);
+      const x = padding.left + (index * step);
+      const y = padding.top + plotHeight - ((value / maxValue) * plotHeight);
+      return { ...row, value, x, y };
+    });
+    const linePath = points.length
+      ? points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
+      : '';
+    const areaPath = points.length
+      ? `${linePath} L ${points[points.length - 1].x} ${padding.top + plotHeight} L ${points[0].x} ${padding.top + plotHeight} Z`
+      : '';
+    const ticks = [0, 25, 50, 75, 100];
+    return { width, height, padding, plotHeight, points, linePath, areaPath, maxValue, ticks };
+  }, [rows]);
+
+  if (!chartData.points.length) {
+    return (
+      <div className="timeline-empty-state">
+        <strong>No Timeline Data Available</strong>
+        <span>Load one or more CSV files from the TIMELINE folder.</span>
+      </div>
+    );
+  }
+
+  return (
+    <svg
+      className="timeline-line-chart"
+      viewBox={`0 0 ${chartData.width} ${chartData.height}`}
+      role="img"
+      aria-label="Timeline line graph"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <defs>
+        <linearGradient id="timelineAreaGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff8f1f" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="#ff8f1f" stopOpacity="0.02" />
+        </linearGradient>
+        <linearGradient id="timelineLineGradient" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#ffb35c" />
+          <stop offset="100%" stopColor="#ff7a00" />
+        </linearGradient>
+      </defs>
+      {chartData.ticks.map(tick => {
+        const y = chartData.padding.top + chartData.plotHeight - ((tick / 100) * chartData.plotHeight);
+        const valueLabel = Math.round((tick / 100) * chartData.maxValue);
+        return (
+          <g key={tick}>
+            <line
+              x1={chartData.padding.left}
+              y1={y}
+              x2={chartData.width - chartData.padding.right}
+              y2={y}
+              stroke="rgba(255,255,255,0.1)"
+              strokeDasharray="4 6"
+            />
+            <text x={chartData.padding.left - 12} y={y + 4} textAnchor="end" fill="#7b8594" fontSize="12" fontWeight="700">
+              {formatCompactCurrency(valueLabel)}
+            </text>
+          </g>
+        );
+      })}
+      <path d={chartData.areaPath} fill="url(#timelineAreaGradient)" />
+      <path d={chartData.linePath} fill="none" stroke="url(#timelineLineGradient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      {chartData.points.map(point => (
+        <g key={`${point.key}-${point.label}`}>
+          <circle cx={point.x} cy={point.y} r="7" fill="#ff8f1f" stroke="#fff2e1" strokeWidth="3" />
+          <text
+            x={point.x}
+            y={chartData.height - 26}
+            textAnchor="middle"
+            fill="#d0d6de"
+            fontSize="11"
+            fontWeight="700"
+          >
+            {String(point.label).length > 14 ? `${String(point.label).slice(0, 12)}…` : point.label}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function TimelineModal({ open, granularity, rows, onClose }) {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    document.body.classList.add('presentation-timeline-open');
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.classList.remove('presentation-timeline-open');
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, open]);
+
+  if (!open) return null;
+
+  const timelineRows = Array.isArray(rows) ? rows : [];
+  const totalSales = timelineRows.reduce((sum, row) => sum + toNumber(row.sales), 0);
+  const totalGk = timelineRows.reduce((sum, row) => sum + toNumber(row.gk), 0);
+  const totalTransactions = timelineRows.reduce((sum, row) => sum + toNumber(row.leads), 0);
+
+  return (
+    <motion.div
+      className="presentation-timeline-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onMouseDown={onClose}
+    >
+      <motion.section
+        className="presentation-timeline-modal"
+        variants={focusMotion}
+        initial="hidden"
+        animate="visible"
+        onMouseDown={event => event.stopPropagation()}
+      >
+        <header className="presentation-timeline-header">
+          <div>
+            <strong>Timeline Presentation</strong>
+            <span>{granularity} view from the TIMELINE folder</span>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close timeline presentation">
+            <X size={22} />
+          </button>
+        </header>
+
+        <div className="presentation-timeline-body">
+          <aside className="presentation-timeline-summary">
+            <div>
+              <span>Total Sales</span>
+              <strong>{formatCompactCurrency(totalSales)}</strong>
+            </div>
+            <div>
+              <span>Total GK</span>
+              <strong>{formatCompactCurrency(totalGk)}</strong>
+            </div>
+            <div>
+              <span>Records</span>
+              <strong>{timelineRows.length.toLocaleString()}</strong>
+            </div>
+            <div>
+              <span>Transactions</span>
+              <strong>{totalTransactions.toLocaleString()}</strong>
+            </div>
+          </aside>
+
+          <div className="presentation-timeline-chart-shell">
+            <TimelineLineChart rows={timelineRows} />
+          </div>
+
+          <div className="presentation-timeline-list">
+            {timelineRows.map(row => (
+              <article key={row.key || row.label}>
+                <strong>{row.label}</strong>
+                <span>{formatCompactCurrency(row.sales)}</span>
+                <small>{toNumber(row.leads).toLocaleString()} transactions</small>
+              </article>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+    </motion.div>
+  );
+}
+
 function StatsGrid({ data, onFocus }) {
   return (
     <section className="stats-grid">
@@ -1349,7 +1531,6 @@ export default function DashboardPresentationView() {
         calendarAnchorDate={calendarDateBounds.earliest || calendarDateBounds.latest || new Date()}
         calendarStartDate={calendarDateBounds.earliest}
         calendarEndDate={calendarDateBounds.latest}
-        timelineSeries={presentationData.salesComparison}
       />
       <StatsGrid data={presentationData.kpis} onFocus={setFocusedPanel} />
 
@@ -1384,6 +1565,12 @@ export default function DashboardPresentationView() {
           {enlarged => <Rankings data={presentationData.reps} enlarged={enlarged} />}
         </FocusShell>
       </section>
+      <TimelineModal
+        open={isTimelineActive}
+        granularity={filters.timeline}
+        rows={analytics.timelineSalesComparison}
+        onClose={() => updateFilter('timeline', 'Disable')}
+      />
       <FocusModal panel={focusedPanel} onClose={() => setFocusedPanel(null)} />
     </motion.main>
   );

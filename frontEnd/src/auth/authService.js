@@ -74,13 +74,13 @@ const normalizeApiUser = (user, token) => {
 
   return normalizeUserProfile({
     ...user,
-    firstName: stored?.firstName || user.firstName,
-    lastName: stored?.lastName || user.lastName,
-    name: stored?.name || name,
-    position: stored?.position || user.position,
-    department: stored?.department || user.department,
+    firstName: user.firstName || stored?.firstName,
+    lastName: user.lastName || stored?.lastName,
+    name,
+    position: user.position || stored?.position,
+    department: user.department || stored?.department,
     avatar: user.avatar || stored?.avatar || '',
-    preferences: stored?.preferences || user.preferences || {},
+    preferences: user.preferences || stored?.preferences || {},
     token,
     authSource: 'api',
     status: user.status || 'approved',
@@ -167,12 +167,12 @@ export function getSession() {
 
   return normalizeUserProfile({
     ...session,
-    firstName: stored.firstName || session.firstName,
-    lastName: stored.lastName || session.lastName,
-    name: stored.name || session.name,
-    position: stored.position || session.position,
-    department: stored.department || session.department,
-    avatar: stored.avatar || session.avatar || ''
+    firstName: session.firstName || stored.firstName,
+    lastName: session.lastName || stored.lastName,
+    name: session.name || stored.name,
+    position: session.position || stored.position,
+    department: session.department || stored.department,
+    avatar: session.avatar || stored.avatar || ''
   });
 }
 
@@ -719,4 +719,3 @@ export function logout() {
 }
 
 export const changePassword = updateCurrentUserPassword;
-

@@ -1137,6 +1137,321 @@ body.presentation-focus-open {
   backdrop-filter: blur(16px);
 }
 
+body.presentation-timeline-open,
+body.presentation-focus-open {
+  overflow: hidden;
+}
+
+.presentation-timeline-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 2vw, 28px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.presentation-timeline-modal {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(88vw, 1540px);
+  height: min(84vh, 920px);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 159, 67, 0.52);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 159, 67, 0.16), transparent 28%),
+    radial-gradient(circle at 100% 100%, rgba(255, 127, 0, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(7, 7, 7, 0.98));
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.68), 0 0 34px rgba(209, 96, 2, 0.2);
+}
+
+.presentation-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(209, 96, 2, 0.24);
+}
+
+.presentation-timeline-header strong {
+  display: block;
+  color: var(--present-accent-soft);
+  font-size: clamp(1.15rem, 1.8vw, 1.7rem);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.presentation-timeline-header span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(233, 239, 248, 0.66);
+  font-size: clamp(0.82rem, 1vw, 0.98rem);
+}
+
+.presentation-timeline-header button {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(255, 159, 67, 0.55);
+  border-radius: 11px;
+  color: var(--present-text);
+  background: rgba(209, 96, 2, 0.12);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.presentation-timeline-body {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 300px;
+  gap: 18px;
+  min-width: 0;
+  min-height: 0;
+  padding: 18px 22px 22px;
+}
+
+.presentation-timeline-summary {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.presentation-timeline-summary > div {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.presentation-timeline-summary span,
+.presentation-timeline-summary strong {
+  display: block;
+}
+
+.presentation-timeline-summary span {
+  color: rgba(233, 239, 248, 0.68);
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.presentation-timeline-summary strong {
+  margin-top: 6px;
+  color: var(--present-text);
+  font-size: clamp(1.2rem, 1.8vw, 1.9rem);
+}
+
+.presentation-timeline-chart-shell {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 10px 4px;
+}
+
+.timeline-line-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.timeline-empty-state {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  height: 100%;
+  gap: 8px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 159, 67, 0.28);
+  color: rgba(233, 239, 248, 0.8);
+  text-align: center;
+  padding: 24px;
+}
+
+.timeline-empty-state strong {
+  color: var(--present-accent-soft);
+  font-size: clamp(1.2rem, 1.6vw, 1.7rem);
+}
+
+.presentation-timeline-list {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.presentation-timeline-list article {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.presentation-timeline-list strong {
+  color: var(--present-text);
+  font-size: 1rem;
+}
+
+.presentation-timeline-list span {
+  color: var(--present-accent-soft);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.presentation-timeline-list small {
+  color: rgba(233, 239, 248, 0.65);
+}
+
+[data-theme="light"] .presentation-timeline-backdrop {
+  background: rgba(28, 34, 45, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+[data-theme="light"] .presentation-timeline-modal {
+  border-color: rgba(230, 112, 38, 0.18);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 159, 67, 0.12), transparent 30%),
+    radial-gradient(circle at 100% 100%, rgba(255, 127, 0, 0.08), transparent 28%),
+    linear-gradient(180deg, #ffffff, #f6f7fb);
+  box-shadow: 0 24px 70px rgba(36, 36, 35, 0.16);
+}
+
+[data-theme="light"] .presentation-timeline-header {
+  border-bottom-color: rgba(36, 36, 35, 0.08);
+}
+
+[data-theme="light"] .presentation-timeline-header strong {
+  color: var(--brand-orange);
+}
+
+[data-theme="light"] .presentation-timeline-header span {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .presentation-timeline-header button {
+  color: var(--brand-orange);
+  background: #fff7f0;
+  border-color: rgba(230, 112, 38, 0.22);
+}
+
+[data-theme="light"] .presentation-timeline-summary > div,
+[data-theme="light"] .presentation-timeline-chart-shell,
+[data-theme="light"] .presentation-timeline-list article,
+[data-theme="light"] .timeline-empty-state {
+  background: #ffffff;
+  border-color: rgba(230, 112, 38, 0.14);
+  box-shadow: 0 10px 28px rgba(36, 36, 35, 0.06);
+}
+
+[data-theme="light"] .presentation-timeline-summary span {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .presentation-timeline-summary strong,
+[data-theme="light"] .presentation-timeline-list strong {
+  color: var(--text-main);
+}
+
+[data-theme="light"] .presentation-timeline-list span,
+[data-theme="light"] .timeline-empty-state strong {
+  color: var(--brand-orange);
+}
+
+[data-theme="light"] .presentation-timeline-list small,
+[data-theme="light"] .timeline-empty-state {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .timeline-line-chart text {
+  fill: var(--chart-axis-text) !important;
+}
+
+[data-theme="light"] .timeline-line-chart line {
+  stroke: var(--chart-grid) !important;
+}
+
+[data-theme="dark"] .presentation-timeline-backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+[data-theme="dark"] .presentation-timeline-modal {
+  border-color: rgba(255, 159, 67, 0.52);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 159, 67, 0.16), transparent 28%),
+    radial-gradient(circle at 100% 100%, rgba(255, 127, 0, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(7, 7, 7, 0.98));
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.68), 0 0 34px rgba(209, 96, 2, 0.2);
+}
+
+[data-theme="dark"] .presentation-timeline-header {
+  border-bottom-color: rgba(209, 96, 2, 0.24);
+}
+
+[data-theme="dark"] .presentation-timeline-header strong {
+  color: var(--present-accent-soft);
+}
+
+[data-theme="dark"] .presentation-timeline-header span {
+  color: rgba(233, 239, 248, 0.66);
+}
+
+[data-theme="dark"] .presentation-timeline-header button {
+  color: var(--present-text);
+  background: rgba(209, 96, 2, 0.12);
+  border-color: rgba(255, 159, 67, 0.55);
+}
+
+[data-theme="dark"] .presentation-timeline-summary > div,
+[data-theme="dark"] .presentation-timeline-chart-shell,
+[data-theme="dark"] .presentation-timeline-list article,
+[data-theme="dark"] .timeline-empty-state {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .presentation-timeline-summary span {
+  color: rgba(233, 239, 248, 0.68);
+}
+
+[data-theme="dark"] .presentation-timeline-summary strong,
+[data-theme="dark"] .presentation-timeline-list strong {
+  color: var(--present-text);
+}
+
+[data-theme="dark"] .presentation-timeline-list span,
+[data-theme="dark"] .timeline-empty-state strong {
+  color: var(--present-accent-soft);
+}
+
+[data-theme="dark"] .presentation-timeline-list small,
+[data-theme="dark"] .timeline-empty-state {
+  color: rgba(233, 239, 248, 0.65);
+}
+
+[data-theme="dark"] .timeline-line-chart text {
+  fill: #d0d6de !important;
+}
+
+[data-theme="dark"] .timeline-line-chart line {
+  stroke: rgba(255, 255, 255, 0.1) !important;
+}
+
 .presentation-focus-modal {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);

@@ -5,13 +5,20 @@ const prisma = require('../config/db');
 
 let timelineSeeded = false;
 
-const TIMELINE_CSV_NAME = 'SO-GK_Amount_2023-Present.csv';
-const TIMELINE_SOURCE_FILE = TIMELINE_CSV_NAME;
-
-const getTimelineCsvPath = () => (
-  process.env.TIMELINE_SALES_CSV_PATH
-  || path.join(__dirname, '..', '..', '..', 'TIMELINE', TIMELINE_CSV_NAME)
+const getTimelineFolderPath = () => (
+  process.env.TIMELINE_SALES_FOLDER_PATH
+  || path.join(__dirname, '..', '..', '..', 'TIMELINE')
 );
+
+const getTimelineCsvPaths = () => {
+  const folderPath = getTimelineFolderPath();
+  if (!fs.existsSync(folderPath) || !fs.statSync(folderPath).isDirectory()) return [];
+
+  return fs.readdirSync(folderPath)
+    .filter(file => file.toLowerCase().endsWith('.csv'))
+    .map(file => path.join(folderPath, file))
+    .sort((left, right) => left.localeCompare(right));
+};
 
 const toNumber = value => {
   const parsed = Number(String(value ?? '')
@@ -64,63 +71,94 @@ const parseTimelineRows = csvText => {
     ));
 };
 
-const importTimelineSalesCsv = async csvPath => {
+const importTimelineCsvFile = async csvPath => {
   if (!fs.existsSync(csvPath)) {
     return { ok: false, message: `Timeline CSV not found at ${csvPath}` };
   }
 
+  const sourceFile = path.basename(csvPath);
   const text = fs.readFileSync(csvPath, 'utf8');
   const records = parseTimelineRows(text);
-
-  await prisma.$executeRaw`
-    DELETE FROM "TimelineSalesRecord"
-    WHERE "sourceFile" = ${TIMELINE_SOURCE_FILE}
-  `;
 
   for (const record of records) {
     await prisma.$executeRaw`
       INSERT INTO "TimelineSalesRecord" ("recordDate", "invoiceNumber", "customerName", "salesmanGk", "amount", "sourceFile", "createdAt")
-      VALUES (${record.recordDate}, ${record.invoiceNumber}, ${record.customerName}, ${record.salesmanGk}, ${record.amount}, ${TIMELINE_SOURCE_FILE}, ${new Date()})
+      VALUES (${record.recordDate}, ${record.invoiceNumber}, ${record.customerName}, ${record.salesmanGk}, ${record.amount}, ${sourceFile}, ${new Date()})
     `;
+  }
+
+  return {
+    ok: true,
+    sourceFile,
+    count: records.length,
+    minDate: records.reduce((min, record) => (!min || record.recordDate < min ? record.recordDate : min), null),
+    maxDate: records.reduce((max, record) => (!max || record.recordDate > max ? record.recordDate : max), null),
+    amount: records.reduce((sum, record) => sum + toNumber(record.amount), 0),
+    gk: records.reduce((sum, record) => sum + toNumber(record.salesmanGk), 0),
+  };
+};
+
+const importTimelineSalesFolder = async () => {
+  const csvPaths = getTimelineCsvPaths();
+  if (!csvPaths.length) {
+    return { ok: false, message: `No timeline CSV files found in ${getTimelineFolderPath()}` };
+  }
+
+  await prisma.$executeRaw`DELETE FROM "TimelineSalesRecord"`;
+
+  const summaries = [];
+  const errors = [];
+
+  for (const csvPath of csvPaths) {
+    try {
+      const summary = await importTimelineCsvFile(csvPath);
+      if (summary?.ok) summaries.push(summary);
+    } catch (error) {
+      errors.push({ file: path.basename(csvPath), error: error?.message || String(error) });
+    }
+  }
+
+  if (errors.length) {
+    console.error('[timeline-sales] Some timeline CSV files failed to import.', errors);
   }
 
   const [summary] = await prisma.$queryRaw`
     SELECT COUNT(*) AS count, MIN("recordDate") AS "minDate", MAX("recordDate") AS "maxDate", SUM("amount") AS amount, SUM("salesmanGk") AS gk
     FROM "TimelineSalesRecord"
-    WHERE "sourceFile" = ${TIMELINE_SOURCE_FILE}
   `;
 
   return {
-    ok: true,
-    count: Number(summary?.count || records.length || 0),
+    ok: summaries.length > 0,
+    count: Number(summary?.count || 0),
     minDate: summary?.minDate || null,
     maxDate: summary?.maxDate || null,
     amount: summary?.amount || 0,
     gk: summary?.gk || 0,
+    files: summaries.length,
+    errors,
   };
 };
 
 const ensureTimelineSalesSeeded = async () => {
   if (timelineSeeded) return { ok: true, seeded: false };
 
-  const [summary] = await prisma.$queryRaw`
-    SELECT COUNT(*) AS count
-    FROM "TimelineSalesRecord"
-  `;
-
-  if (Number(summary?.count || 0) > 0) {
+  const csvPaths = getTimelineCsvPaths();
+  if (!csvPaths.length) {
+    console.warn('[timeline-sales] No CSV files found in the timeline folder.');
     timelineSeeded = true;
-    return { ok: true, seeded: false };
+    return { ok: false, seeded: true, message: 'No timeline CSV files found.' };
   }
 
-  const result = await importTimelineSalesCsv(getTimelineCsvPath());
+  const result = await importTimelineSalesFolder();
   timelineSeeded = result.ok;
   return { ...result, seeded: true };
 };
 
 module.exports = {
   ensureTimelineSalesSeeded,
-  getTimelineCsvPath,
-  importTimelineSalesCsv,
+  getTimelineFolderPath,
+  getTimelineCsvPaths,
+  importTimelineCsvFile,
+  importTimelineSalesFolder,
   parseTimelineRows,
 };
