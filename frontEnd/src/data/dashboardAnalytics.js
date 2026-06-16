@@ -8,19 +8,17 @@ import { readDashboardFilters, subscribeDashboardFilters } from '../utils/dashbo
 import { normalizeProductName } from './productCatalog';
 import { resolveSalesRepPhoto } from '../utils/salesRepUtils';
 
-const counterBuckets = ['Revival (REV)', 'First Time (FT)', 'New (N/n)', 'No Counter'];
+const counterBuckets = ['Acquisition', 'Retention', 'Revival'];
 const counterDisplayLabels = {
-  'Revival (REV)': 'Revival',
-  'First Time (FT)': 'Acquisition',
-  'New (N/n)': '---',
-  'No Counter': 'Retention'
+  Acquisition: 'Acquisition',
+  Retention: 'Retention',
+  Revival: 'Revival'
 };
 const productColors = ['#D16002', '#CC5500', '#ff9f43', '#9a674f', '#f8bd6b', '#5f5f5f', '#e07715', '#b84b00', '#ffc46e', '#7d7f82'];
 const counterColors = {
-  'Revival (REV)': '#b94a04',
-  'First Time (FT)': '#d76408',
-  'New (N/n)': '#8b6453',
-  'No Counter': '#f7b95f'
+  Acquisition: '#D16002',
+  Retention: '#CC5500',
+  Revival: '#ff9f43'
 };
 const validProductNames = new Set([
   'DRBS',
@@ -63,17 +61,38 @@ const formatTons = value => {
 const normalizeCounter = value => {
   const label = String(value || '').trim();
   const key = label.toLowerCase();
-  if (!key) return 'No Counter';
-  if (key.includes('revival') || key === 'r' || key === 'rev') return 'Revival (REV)';
-  if (key.includes('first') || key === 'ft' || key === 'f/t') return 'First Time (FT)';
-  if (key === 'n' || key === 'new' || key === 'n/n' || key === 'new (n)' || key === 'new (n/n)' || key === '---') return 'New (N/n)';
-  return 'No Counter';
+  if (key.includes('revival') || key === 'r' || key === 'rev') return 'Revival';
+  if (key.includes('first') || key === 'ft' || key === 'f/t') return 'Acquisition';
+  if (!key || key === 'n' || key === 'new' || key === 'n/n' || key === 'new (n)' || key === 'new (n/n)' || key === '---' || key === 'no counter' || key === 'blank' || key === '-') return 'Retention';
+  return 'Retention';
 };
 
 const rowRepLabel = row => String(
   getSalesRepNameFromCode(row?.repCode) || row?.salesRep || row?.repName || row?.repCode || 'Unassigned'
 ).trim() || 'Unassigned';
 const repKey = value => String(value || 'Unassigned').trim().toUpperCase();
+const companyKey = value => String(value || '').trim().toUpperCase();
+const normalizePaymentTerm = value => {
+  const raw = String(value || '').trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  const key = raw.toLowerCase();
+  if (!key) return 'Unspecified';
+  if (key.includes('online') && key.includes('cash')) return 'Online Cash';
+  if (key === 'cash' || (key.includes('cash') && !key.includes('online'))) return 'Cash';
+  return raw.split(' ').map(word => {
+    const lowered = word.toLowerCase();
+    if (/^\d+$/.test(word)) return word;
+    if (['pdc', 'ft', 'gk', 'gs', 'p.o.'].includes(lowered)) return lowered.toUpperCase();
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
+};
+
+const normalizeCompanyPerformance = value => {
+  const label = String(value || '').trim().toLowerCase();
+  if (!label) return 'Retention';
+  if (label.includes('revival') || label === 'r' || label === 'rev') return 'Revival';
+  if (label.includes('first') || label === 'ft' || label === 'f/t' || label.includes('new')) return 'Acquisition';
+  return 'Retention';
+};
 
 export const getActiveDealRows = (rows = [], filters = {}) => {
   const sourceRows = Array.isArray(rows) ? rows : [];
@@ -109,15 +128,11 @@ const buildPresentationCounterData = rows => {
     return {
       label,
       displayLabel: counterDisplayLabels[label] || label,
-      count: label === 'No Counter' ? bucket.companies.size : bucket.count,
+      count: bucket.companies.size,
       sales: Math.round(bucket.sales || 0),
       gk: Math.round(bucket.gk || 0),
       reps: bucket.reps.size || 0
     };
-  }).sort((a, b) => {
-    const countDelta = toNumber(b.count) - toNumber(a.count);
-    if (countDelta) return countDelta;
-    return String(a.label || '').localeCompare(String(b.label || ''));
   });
 };
 
@@ -136,8 +151,7 @@ const buildMetricCards = liveData => {
     { metric: 'sales', title: 'Total Gross Sales', value: formatCurrency(liveData.totals?.sales), trend: 'up', trendValue: 'CSV', icon: 'dollar' },
     { metric: 'gk', title: 'Total GK', value: formatCurrency(liveData.totals?.gk), trend: 'up', trendValue: 'CSV', icon: 'chart' },
     { metric: 'leads', title: 'Total Leads Gathered', value: String(liveData.totals?.rows || 0), trend: 'up', trendValue: 'rows', icon: 'users' },
-    { metric: 'active-reps', title: 'Active Sales Reps', value: String(liveData.totals?.reps || 0), trend: 'up', trendValue: 'unique', icon: 'users' },
-    { metric: 'clients', title: 'Total Clients', value: String(liveData.totals?.companies || 0), trend: 'up', trendValue: 'unique', icon: 'users' },
+    { metric: 'clients', title: 'Number of Clients', value: String(liveData.totals?.companies || 0), trend: 'up', trendValue: 'unique company names', icon: 'users' },
     { metric: 'top-rep', title: 'Top Performing Rep', value: topRep?.label || 'N/A', trend: 'up', trendValue: topRep ? formatCurrency(topRep.sales) : 'PHP 0', icon: 'target' }
   ];
   return [
@@ -234,18 +248,76 @@ const buildPresentationProducts = products => {
   }));
 };
 
+const buildPresentationTerms = rows => {
+  const totals = new Map();
+
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    const label = normalizePaymentTerm(row.terms);
+    const key = label.toUpperCase();
+    const current = totals.get(key) || {
+      label,
+      name: label,
+      amount: 0,
+      count: 0
+    };
+
+    current.amount += toNumber(row.grossSales || row.sales);
+    current.count += 1;
+    totals.set(key, current);
+  });
+
+  const totalAmount = Array.from(totals.values()).reduce((sum, term) => sum + term.amount, 0) || 1;
+
+  return Array.from(totals.values())
+    .filter(term => term.amount > 0 || term.count > 0)
+    .sort((a, b) => {
+      const amountDelta = b.amount - a.amount;
+      if (amountDelta) return amountDelta;
+      return String(a.label || '').localeCompare(String(b.label || ''));
+    })
+    .map((term, index) => ({
+      ...term,
+      name: term.label,
+      rawValue: term.amount,
+      totalLabel: formatCompactCurrency(term.amount),
+      percentage: Math.round((term.amount / totalAmount) * 1000) / 10,
+      color: productColors[index % productColors.length]
+    }));
+};
+
 const buildCompanyRankingData = liveData => {
   const rows = Array.isArray(liveData?.rawRows) ? liveData.rawRows : [];
   const companies = new Map();
 
   rows.forEach(row => {
-    const label = String(row.clientName || row.companyName || row.name || 'Unassigned').trim() || 'Unassigned';
-    const key = label.toUpperCase();
+    const label = String(row.clientName || row.companyName || row.name || '').trim();
+    if (!label) return;
+    const key = companyKey(label);
     const repLabel = rowRepLabel(row);
     const rowValue = toNumber(row.grossSales || row.sales);
-    const current = companies.get(key) || { label, name: label, value: 0, repTotals: new Map() };
+    const rowDate = row.date ? new Date(row.date) : null;
+    const current = companies.get(key) || {
+      label,
+      name: label,
+      value: 0,
+      repTotals: new Map(),
+      performanceTotals: new Map(),
+      paymentTotals: new Map(),
+      latestDate: null,
+      latestPerformance: 'Retention',
+      latestPayment: 'Unspecified'
+    };
     current.value += rowValue;
     current.repTotals.set(repLabel, (current.repTotals.get(repLabel) || 0) + rowValue);
+    const performance = normalizeCompanyPerformance(row.counter);
+    const paymentTerm = normalizePaymentTerm(row.terms);
+    current.performanceTotals.set(performance, (current.performanceTotals.get(performance) || 0) + 1);
+    current.paymentTotals.set(paymentTerm, (current.paymentTotals.get(paymentTerm) || 0) + 1);
+    if (rowDate && !Number.isNaN(rowDate.getTime()) && (!current.latestDate || rowDate > current.latestDate)) {
+      current.latestDate = rowDate;
+      current.latestPerformance = performance;
+      current.latestPayment = paymentTerm;
+    }
     companies.set(key, current);
   });
 
@@ -253,15 +325,30 @@ const buildCompanyRankingData = liveData => {
     .map(company => {
       const [topRep = 'Unassigned'] = Array.from(company.repTotals.entries())
         .sort((a, b) => b[1] - a[1])[0] || [];
+      const pickDominant = (map, fallback) => {
+        const entries = Array.from(map.entries());
+        if (!entries.length) return fallback;
+        const [winner] = entries.sort((a, b) => {
+          const delta = b[1] - a[1];
+          if (delta) return delta;
+          return String(a[0]).localeCompare(String(b[0]));
+        })[0] || [];
+        return winner || fallback;
+      };
+      const dominantPerformance = pickDominant(company.performanceTotals, company.latestPerformance || 'Retention');
+      const dominantPayment = pickDominant(company.paymentTotals, company.latestPayment || 'Unspecified');
       return {
-        ...company,
-        value: Math.round(company.value * 100) / 100,
-        salesRep: topRep,
-        repAvatar: resolveSalesRepPhoto(topRep),
-        repTotals: undefined
+        label: company.label,
+        name: company.name,
+        companyName: company.label,
+        totalSalesAmount: Math.round(company.value * 100) / 100,
+        salesPerformance: dominantPerformance,
+        paymentTerm: dominantPayment,
+        companyPhoto: resolveSalesRepPhoto(topRep),
+        salesRep: topRep
       };
     })
-    .sort((a, b) => b.value - a.value)
+    .sort((a, b) => b.totalSalesAmount - a.totalSalesAmount)
     .slice(0, 10);
 };
 
@@ -301,17 +388,24 @@ const buildRepRows = (rows = []) => {
       sales: 0,
       gk: 0,
       deals: 0,
-      leads: 0
+      leads: 0,
+      companies: new Set()
     };
 
     current.sales += toNumber(row.grossSales || row.sales);
     current.gk += toNumber(row.salesmanGk || row.gk || row.finalGk);
     current.deals += 1;
     current.leads += 1;
+    const companyName = String(row.clientName || row.companyName || row.name || '').trim().toUpperCase();
+    if (companyName) current.companies.add(companyName);
     groups.set(key, current);
   });
 
-  return Array.from(groups.values());
+  return Array.from(groups.values()).map(rep => ({
+    ...rep,
+    deals: rep.companies?.size || rep.deals,
+    companies: rep.companies?.size || 0
+  }));
 };
 
 const buildRepRoster = (allRows = [], activeRows = []) => {
@@ -358,7 +452,6 @@ const buildPresentationData = analytics => {
     sales: totals.sales + toNumber(row.grossSales || row.sales),
     gk: totals.gk + toNumber(row.salesmanGk || row.gk || row.finalGk)
   }), { sales: 0, gk: 0 });
-  const activeDealRepKeys = new Set(activeDealRows.map(row => repKey(rowRepLabel(row))).filter(Boolean));
   const useTimelineComparison = analytics.filters?.timeline !== 'Disable' && analytics.timelineSalesComparison?.length;
   const salesComparisonSource = useTimelineComparison ? analytics.timelineSalesComparison : analytics.salesPerformance;
   const salesComparison = (salesComparisonSource || []).map(row => ({
@@ -368,19 +461,20 @@ const buildPresentationData = analytics => {
     leads: toNumber(row.leads),
     reps: toNumber(row.reps)
   }));
-  const companyMax = Math.max(...(analytics.companies || []).map(row => toNumber(row.value)), 1);
   const companies = (analytics.companies || []).map((row, index) => ({
     rank: index + 1,
-    name: row.label || row.name || 'Unassigned',
-    amount: formatCompactCurrency(row.value),
-    rawValue: toNumber(row.value),
+    companyName: row.companyName || row.label || row.name || 'Unassigned',
+    amount: formatCompactCurrency(row.totalSalesAmount ?? row.value),
+    totalSalesAmount: toNumber(row.totalSalesAmount ?? row.value),
+    salesPerformance: row.salesPerformance || 'Retention',
+    paymentTerm: row.paymentTerm || 'Unspecified',
+    companyPhoto: row.companyPhoto || resolveSalesRepPhoto(row.salesRep),
     salesRep: row.salesRep || 'Unassigned',
-    repAvatar: row.repAvatar || resolveSalesRepPhoto(row.salesRep),
-    progress: Math.max(5, (toNumber(row.value) / companyMax) * 100),
     color: productColors[index % productColors.length]
   }));
   const counters = buildPresentationCounters(buildPresentationCounterData(activeDealRows));
   const presentationProducts = buildPresentationProducts(analytics.processedProductBreakdownData.rows);
+  const presentationTerms = buildPresentationTerms(activeDealRows);
   const sharedProductTotals = {
     ...analytics.processedProductBreakdownData.totals,
     tons: toNumber(liveData.totals?.tons),
@@ -398,15 +492,15 @@ const buildPresentationData = analytics => {
     revenue: formatCompactCurrency(repMetric === 'sales' ? rep.sales : rep.gk),
     rawSales: toNumber(rep.sales),
     rawGk: toNumber(rep.gk),
-    deals: `${toNumber(rep.deals)} deals`
+    deals: `${toNumber(rep.deals)} client${toNumber(rep.deals) === 1 ? '' : 's'}`
   }));
 
   const kpis = [
       ...(analytics.filters?.period === 'Monthly' ? [{ label: 'Total Tons', value: formatTons(sharedProductTotals.tons), note: 'Total steel tonnage' }] : []),
-      { label: 'Deals Closed', value: String(dealsClosed), note: '' },
+      { label: 'Number of Transactions', value: String(dealsClosed), note: '' },
       { label: 'Total Gross Sales', value: formatCompactCurrency(periodTotals.sales), note: `${activeDealRows.length} period rows` },
       { label: 'GK Value', value: formatCompactCurrency(periodTotals.gk), note: 'From uploaded GK columns' },
-      { label: 'Active Reps', value: String(activeDealRepKeys.size), note: '' }
+      { label: 'Number of Clients', value: String(liveData.totals?.companies || 0), note: 'Unique company names' }
   ];
 
   return {
@@ -414,6 +508,7 @@ const buildPresentationData = analytics => {
     salesComparison,
     companies,
     products: presentationProducts,
+    terms: presentationTerms,
     counters,
     reps: rankedReps,
     productTotals: sharedProductTotals,

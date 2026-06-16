@@ -13,10 +13,10 @@ const sourceColors = ['#D16002', '#CC5500', '#ff9f43', '#f8bd6b', '#8a5f4f', '#5
 
 export const presentationMetrics = [
   { label: 'Target Achievement', value: '94%', detail: 'Pacing above forecast' },
-  { label: 'Deals Closed', value: '324', detail: '' },
+  { label: 'Number of Transactions', value: '324', detail: '' },
   { label: 'Total Gross Sales', value: 'PHP 2.1M', detail: '+8.2% growth' },
   { label: 'GK Value', value: 'PHP 680K', detail: 'High-value pipeline' },
-  { label: 'Active Reps', value: '18', detail: '' }
+  { label: 'Number of Clients', value: '486', detail: 'Unique company names' }
 ];
 
 export const presentationSalesTrend = [
@@ -79,7 +79,7 @@ export const analyticsDailySales = dailySalesTrend;
 export const analyticsMonthlySales = monthlyGrossSalesTrend;
 
 export const salesTeamPresentationMetrics = [
-  { label: 'Active Reps', value: '18', detail: '12 approved accounts' },
+  { label: 'Number of Clients', value: '486', detail: 'Unique company names' },
   { label: 'Top Performer', value: baseSalesReps[0]?.name || 'Unassigned', detail: '98% performance' },
   { label: 'Deals Converted', value: '452', detail: 'Selected period' },
   { label: 'Converted', value: '452', detail: 'Completed sales orders' },

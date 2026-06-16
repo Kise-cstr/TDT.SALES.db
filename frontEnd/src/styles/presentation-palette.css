@@ -30,6 +30,11 @@
     linear-gradient(180deg, var(--present-bg) 0%, var(--present-bg-soft) 48%, var(--present-bg) 100%) !important;
 }
 
+.presentation-dashboard .presentation-header {
+  overflow: visible !important;
+  z-index: 30;
+}
+
 .presentation-dashboard.dashboard-content {
   width: min(100%, 1920px) !important;
   max-width: 1920px !important;
@@ -83,6 +88,27 @@
 .analytics-filter-row span,
 .analytics-tooltip strong {
   color: var(--present-accent-soft) !important;
+}
+
+.presentation-dashboard .dashboard-card-title-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.presentation-dashboard .dashboard-card-title-toggle:hover,
+.presentation-dashboard .dashboard-card-title-toggle:focus-visible {
+  color: var(--present-accent-soft);
+  text-shadow: 0 0 10px rgba(255, 159, 67, 0.18);
+  outline: none;
 }
 
 .presentation-company,
@@ -220,6 +246,348 @@
 
 .presentation-dashboard .presentation-actions .presentation-header-control {
   width: clamp(102px, 7vw, 132px);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control {
+  position: relative;
+  width: clamp(220px, 20vw, 320px);
+  min-width: 0;
+  flex: 0 1 clamp(220px, 20vw, 320px);
+  overflow: visible;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 1px solid rgba(255, 159, 67, 0.34);
+  border-radius: 10px;
+  background: rgba(209, 96, 2, 0.16);
+  color: #ffcf93;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger:hover,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger:focus-visible {
+  border-color: rgba(255, 159, 67, 0.72);
+  background: rgba(209, 96, 2, 0.22);
+  box-shadow: 0 0 16px rgba(209, 96, 2, 0.18);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-control-row select {
+  width: clamp(104px, 6.4vw, 128px);
+  flex: 0 0 auto;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-range {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  left: auto;
+  z-index: 40;
+  width: min(470px, calc(100vw - 48px));
+  padding: 10px;
+  border: 1px solid var(--present-border-strong);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(19, 19, 19, 0.98), rgba(12, 12, 12, 0.98));
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
+  display: grid;
+  gap: 8px;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-shell {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-presets {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-preset,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-secondary,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-primary {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  min-height: 28px;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-preset {
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--present-text);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-preset:hover,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-preset:focus-visible {
+  border-color: rgba(255, 159, 67, 0.42);
+  background: rgba(209, 96, 2, 0.14);
+  outline: none;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-preset.is-active {
+  border-color: rgba(255, 159, 67, 0.64);
+  background: rgba(209, 96, 2, 0.22);
+  color: var(--present-accent-soft);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-custom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar {
+  display: grid;
+  gap: 6px;
+  padding: 2px 0 0;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--present-text);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-nav button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255, 159, 67, 0.22);
+  border-radius: 999px;
+  color: var(--present-text);
+  background: rgba(255, 255, 255, 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-nav button:hover,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-nav button:focus-visible {
+  border-color: rgba(255, 159, 67, 0.5);
+  background: rgba(209, 96, 2, 0.16);
+  outline: none;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-weekdays,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-weekdays span {
+  text-align: center;
+  color: var(--present-muted);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell {
+  height: 26px;
+  border: 0;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--present-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+  position: relative;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-empty {
+  pointer-events: none;
+  background: transparent;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell:hover,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell:focus-visible {
+  outline: none;
+  background: rgba(209, 96, 2, 0.12);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-today {
+  box-shadow: inset 0 0 0 1px rgba(255, 159, 67, 0.28);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-in-range {
+  background: rgba(255, 159, 67, 0.14);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-range-start,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-range-end {
+  background: linear-gradient(180deg, rgba(209, 96, 2, 0.96), rgba(204, 85, 0, 0.98));
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(209, 96, 2, 0.18);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-custom label {
+  display: grid;
+  gap: 3px;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-custom label span {
+  color: var(--present-muted) !important;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-custom input {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 159, 67, 0.22);
+  border-radius: 8px;
+  color: var(--present-text);
+  background: rgba(18, 18, 18, 0.94);
+  font: inherit;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-secondary {
+  padding: 0 10px;
+  color: var(--present-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-primary {
+  padding: 0 10px;
+  color: #fff;
+  border-color: rgba(255, 159, 67, 0.42);
+  background: linear-gradient(180deg, rgba(209, 96, 2, 0.92), rgba(204, 85, 0, 0.98));
+  box-shadow: 0 8px 14px rgba(209, 96, 2, 0.16);
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
+.presentation-dashboard .companies-card,
+.presentation-dashboard .rankings-card {
+  border-color: var(--present-border) !important;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(209, 96, 2, 0.09), transparent 28%),
+    linear-gradient(180deg, rgba(32, 32, 32, 0.96), rgba(17, 17, 17, 0.98)),
+    var(--present-panel) !important;
+  box-shadow: 0 0 18px var(--present-glow), inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.presentation-dashboard .companies-card .dashboard-card-header h2,
+.presentation-dashboard .rankings-card .dashboard-card-header h2,
+.presentation-dashboard .companies-card .dashboard-card-header p,
+.presentation-dashboard .rankings-card .dashboard-card-header p {
+  color: var(--present-text) !important;
+}
+
+.presentation-dashboard .rankings-list article {
+  background: linear-gradient(180deg, rgba(27, 27, 27, 0.98), rgba(18, 18, 18, 0.98)) !important;
+  border: 1px solid rgba(255, 140, 0, 0.14) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18) !important;
+}
+
+.presentation-dashboard .rankings-list article > span {
+  background: rgba(209, 96, 2, 0.18) !important;
+  color: var(--present-accent-soft) !important;
+}
+
+.presentation-dashboard .rankings-list strong {
+  color: var(--present-text) !important;
+  text-shadow: none !important;
+}
+
+.presentation-dashboard .rankings-list b {
+  color: var(--present-accent-soft) !important;
+  text-shadow: none !important;
+}
+
+.presentation-dashboard .rankings-list small {
+  color: var(--present-muted) !important;
+  text-shadow: none !important;
+}
+
+.presentation-dashboard .rankings-list article.is-active,
+.presentation-dashboard .rankings-list article:hover {
+  background: linear-gradient(180deg, rgba(34, 34, 34, 0.98), rgba(19, 19, 19, 0.98)) !important;
+  border-color: rgba(255, 159, 67, 0.34) !important;
+  box-shadow: 0 10px 24px rgba(209, 96, 2, 0.14) !important;
+}
+
+.presentation-dashboard .rankings-list article.is-muted {
+  opacity: 0.72;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-secondary:hover,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-secondary:focus-visible,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-primary:hover,
+.presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-primary:focus-visible {
+  transform: translateY(-1px);
+  outline: none;
 }
 
 .presentation-dashboard .presentation-header-control.is-disabled span {
@@ -629,7 +997,6 @@ body.presentation-focus-open {
 
 .presentation-dashboard .product-pie-list article {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) minmax(52px, 74px) minmax(92px, 140px);
   align-items: center;
   min-height: clamp(34px, 4.4vh, 46px);
   min-width: 0;
@@ -639,6 +1006,14 @@ body.presentation-focus-open {
   cursor: pointer;
   opacity: 1;
   transition: opacity 180ms ease, transform 180ms ease, background-color 180ms ease, filter 180ms ease;
+}
+
+.presentation-dashboard .product-pie-list.is-products article {
+  grid-template-columns: 16px minmax(0, 1fr) minmax(42px, 64px) minmax(92px, 140px);
+}
+
+.presentation-dashboard .product-pie-list.is-terms article {
+  grid-template-columns: 16px minmax(0, 1fr) minmax(42px, 64px) minmax(92px, 140px);
 }
 
 .presentation-dashboard .product-pie-list i {
@@ -894,6 +1269,80 @@ body.presentation-focus-open {
   min-height: 64px;
 }
 
+.presentation-dashboard .company-table-shell {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.presentation-dashboard .company-table-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 140, 0, 0.56) rgba(255,255,255,0.04);
+}
+
+.presentation-dashboard .company-table-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.presentation-dashboard .company-table-list::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+}
+
+.presentation-dashboard .company-table-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 140, 0, 0.56);
+  border-radius: 999px;
+}
+
+.presentation-dashboard .company-table-list article {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.presentation-dashboard .company-table-list .company-row-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.presentation-dashboard .company-table-list .company-row-right {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.presentation-dashboard .company-table-list .company-rank {
+  width: 34px;
+  height: 34px;
+}
+
+.presentation-dashboard .company-table-list .company-photo {
+  width: 40px;
+  height: 40px;
+}
+
+.presentation-dashboard .company-table-list .company-amount {
+  min-width: 106px;
+  justify-self: end;
+}
+
+.presentation-dashboard .company-table-list .company-status {
+  min-width: 112px;
+}
+
+.presentation-dashboard .company-table-list .company-term {
+  min-width: 112px;
+}
+
 .presentation-dashboard .counter-card.is-enlarged .counter-bar-row {
   min-height: 82px;
 }
@@ -908,31 +1357,61 @@ body.presentation-focus-open {
 .presentation-focus-modal-body .rankings-list article,
 .presentation-dashboard .rankings-card.is-enlarged .rankings-list article,
 .presentation-ranking-row {
-  min-height: 58px !important;
-  padding: 10px 14px !important;
+  min-height: 52px !important;
+  padding: 8px 12px !important;
   border-radius: 16px !important;
-  display: grid !important;
-  grid-template-columns: 40px minmax(0, 1fr) auto auto !important;
-  gap: 12px !important;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 241, 236, 0.96)) !important;
   border: 1px solid rgba(230, 112, 38, 0.14) !important;
   box-shadow: 0 6px 16px rgba(36, 36, 35, 0.06) !important;
 }
 
+.presentation-focus-modal-body .rankings-list article .ranking-row-left,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article .ranking-row-left,
+.presentation-ranking-row .ranking-row-left {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.presentation-focus-modal-body .rankings-list article .ranking-row-right,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article .ranking-row-right,
+.presentation-ranking-row .ranking-row-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 1 auto;
+  gap: 8px;
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+}
+
 .presentation-focus-modal-body .rankings-list article > span,
 .presentation-dashboard .rankings-card.is-enlarged .rankings-list article > span,
 .presentation-ranking-row > span {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
   border-radius: 12px;
   display: inline-grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.96) !important;
   border: 1px solid rgba(230, 112, 38, 0.14);
   color: #e87026 !important;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 950;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
@@ -940,11 +1419,12 @@ body.presentation-focus-open {
 .presentation-focus-modal-body .rankings-list article strong,
 .presentation-dashboard .rankings-card.is-enlarged .rankings-list article strong,
 .presentation-ranking-row strong {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 16px !important;
+  font-size: 15px !important;
   font-weight: 900 !important;
   color: #242423 !important;
 }
@@ -952,8 +1432,10 @@ body.presentation-focus-open {
 .presentation-focus-modal-body .rankings-list article b,
 .presentation-dashboard .rankings-card.is-enlarged .rankings-list article b,
 .presentation-ranking-row em {
+  flex: 0 0 auto;
   white-space: nowrap;
-  font-size: 16px !important;
+  min-width: 84px;
+  font-size: 15px !important;
   font-style: normal;
   font-weight: 950 !important;
   color: #E67026 !important;
@@ -963,70 +1445,19 @@ body.presentation-focus-open {
 .presentation-focus-modal-body .rankings-list article small,
 .presentation-dashboard .rankings-card.is-enlarged .rankings-list article small,
 .presentation-ranking-row small {
+  flex: 0 0 auto;
   white-space: nowrap;
-  font-size: 12px !important;
+  min-width: 72px;
+  font-size: 11px !important;
   font-weight: 750 !important;
   color: rgba(95, 92, 87, 0.84) !important;
-  text-align: right;
-}
-
-.presentation-ranking-row small:last-child {
-  display: none;
-}
-
-.presentation-focus-modal-body .rankings-list article[data-rank="1"],
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="1"],
-.presentation-ranking-row[data-rank="1"] {
-  border-color: rgba(242, 190, 119, 0.42) !important;
-}
-
-.presentation-focus-modal-body .rankings-list article[data-rank="2"],
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="2"],
-.presentation-ranking-row[data-rank="2"] {
-  border-color: rgba(214, 195, 173, 0.34) !important;
-}
-
-.presentation-focus-modal-body .rankings-list article[data-rank="3"],
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="3"],
-.presentation-ranking-row[data-rank="3"] {
-  border-color: rgba(241, 167, 85, 0.36) !important;
-}
-
-.presentation-focus-modal-body .rankings-list article[data-rank="1"] > span,
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="1"] > span,
-.presentation-ranking-row[data-rank="1"] > span {
-  color: #c66a18 !important;
-  background: rgba(255, 236, 215, 0.98) !important;
-}
-
-.presentation-focus-modal-body .rankings-list article[data-rank="2"] > span,
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="2"] > span,
-.presentation-ranking-row[data-rank="2"] > span {
-  color: rgba(120, 88, 48, 0.88) !important;
-  background: rgba(255, 247, 236, 0.98) !important;
-}
-
-.presentation-focus-modal-body .rankings-list article[data-rank="3"] > span,
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="3"] > span,
-.presentation-ranking-row[data-rank="3"] > span {
-  color: #ef8c2f !important;
-  background: rgba(255, 241, 227, 0.98) !important;
-}
-
-.presentation-focus-modal-body .rankings-list article b,
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article b {
-  text-align: right;
-}
-
-.presentation-focus-modal-body .rankings-list article small,
-.presentation-dashboard .rankings-card.is-enlarged .rankings-list article small {
   text-align: right;
 }
 
 /* Keep the modal compact even when the card is enlarged. */
 .presentation-focus-modal-body .rankings-list article,
 .presentation-dashboard .rankings-card.is-enlarged .rankings-list article {
-  min-height: 58px !important;
+  min-height: 52px !important;
 }
 
 [data-theme="dark"] .presentation-focus-modal-body .rankings-list article,
@@ -1429,6 +1860,102 @@ body.presentation-focus-open {
   border-color: rgba(166, 166, 168, 0.24) !important;
   color: rgba(113, 112, 116, 0.54) !important;
   background: #F2F2F2 !important;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control {
+  overflow: visible;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger {
+  border-color: rgba(230, 112, 38, 0.22);
+  background: rgba(230, 112, 38, 0.08);
+  color: var(--present-accent);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger:hover,
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-trigger:focus-visible {
+  border-color: rgba(230, 112, 38, 0.34);
+  background: rgba(230, 112, 38, 0.14);
+  box-shadow: 0 8px 18px rgba(36, 36, 35, 0.08);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover {
+  border-color: rgba(230, 112, 38, 0.20);
+  background: #ffffff;
+  box-shadow: 0 20px 36px rgba(36, 36, 35, 0.12);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-header {
+  color: var(--present-text);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-nav button {
+  border-color: rgba(230, 112, 38, 0.18);
+  background: #f7f7f7;
+  color: var(--present-text);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-nav button:hover,
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-nav button:focus-visible {
+  border-color: rgba(230, 112, 38, 0.32);
+  background: rgba(230, 112, 38, 0.12);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell {
+  background: #f6f6f6;
+  color: var(--present-text);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell:hover,
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell:focus-visible {
+  background: rgba(230, 112, 38, 0.12);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-today {
+  box-shadow: inset 0 0 0 1px rgba(230, 112, 38, 0.24);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-in-range {
+  background: rgba(230, 112, 38, 0.12);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-range-start,
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-calendar-cell.is-range-end {
+  background: linear-gradient(180deg, rgba(230, 112, 38, 0.92), rgba(204, 85, 0, 0.98));
+  color: #fff;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-preset {
+  background: #f7f7f7;
+  color: var(--present-text);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-preset.is-active {
+  border-color: rgba(230, 112, 38, 0.34);
+  background: rgba(230, 112, 38, 0.14);
+  color: var(--present-accent);
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-popover-custom input {
+  border-color: rgba(230, 112, 38, 0.18);
+  color: var(--present-text);
+  background: #ffffff;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-secondary {
+  color: var(--present-text);
+  background: #f5f5f5;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-actions .presentation-header-control.presentation-date-control .presentation-date-primary {
+  border-color: rgba(230, 112, 38, 0.34);
+  background: linear-gradient(180deg, rgba(230, 112, 38, 0.92), rgba(204, 85, 0, 0.98));
 }
 
 [data-theme="light"] .presentation-tooltip,

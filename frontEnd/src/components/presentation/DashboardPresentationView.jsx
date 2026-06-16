@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileSpreadsheet, Maximize2, Trophy, X } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, FileSpreadsheet, Maximize2, Trophy, X } from 'lucide-react';
 import logo from '../../assets/logos/tdt_logo.png';
-import SalesComparisonChart from '../charts/SalesComparisonChart';
 import { useDashboardAnalytics, validatePresentationSync } from '../../data/dashboardAnalytics';
 import {
   metricOptions,
@@ -17,8 +16,21 @@ const panelMotion = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: 'easeOut' } }
 };
 
-const headerPeriodOptions = ['Monthly', 'Weekly', 'Daily'];
 const headerTimelineOptions = timelineOptions;
+const dateRangeOptions = [
+  'Today',
+  'Yesterday',
+  'Last 7 Days',
+  'Last 30 Days',
+  'This Month',
+  'Custom Range'
+];
+const dayMs = 86400000;
+const dateRangeFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: '2-digit',
+  year: 'numeric'
+});
 
 const focusMotion = {
   hidden: { opacity: 0, scale: 0.94, y: 16 },
@@ -30,9 +42,181 @@ const toNumber = value => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const formatCompactCurrency = value => {
+  const amount = toNumber(value);
+  if (amount >= 1000000000) return `PHP ${(amount / 1000000000).toFixed(amount >= 10000000000 ? 0 : 1)}B`;
+  if (amount >= 1000000) return `PHP ${(amount / 1000000).toFixed(amount >= 100000000 ? 0 : 1)}M`;
+  if (amount >= 1000) return `PHP ${(amount / 1000).toFixed(amount >= 100000 ? 0 : 1)}K`;
+  return `PHP ${Math.round(amount).toLocaleString()}`;
+};
+
 const formatShare = value => {
   const share = toNumber(value);
   return Number.isInteger(share) ? String(share) : share.toFixed(1);
+};
+
+const normalizeDateRangeLabel = value => {
+  const label = String(value || 'All Time').trim();
+  const lower = label.toLowerCase();
+  if (lower === 'current month') return 'This Month';
+  if (lower === 'last 3 months') return 'Last 30 Days';
+  if (lower === 'last 6 months') return 'This Quarter';
+  if (lower === 'year to date') return 'This Year';
+  if (lower === 'custom date range') return 'Custom Range';
+  if (lower === 'all time' || !label) return 'All Time';
+  return label;
+};
+
+const toDateInputValue = value => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+};
+
+const formatRangeDate = value => {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : dateRangeFormatter.format(date);
+};
+
+const getPresetRangeWindow = (preset, bounds = {}) => {
+  const anchorDate = parseDateInputValue(bounds.anchorDate) || parseDateInputValue(bounds.latestDate) || parseDateInputValue(bounds.earliestDate) || new Date();
+  const endDate = parseDateInputValue(bounds.latestDate) || anchorDate;
+  const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const endOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+  const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  const normalized = normalizeDateRangeLabel(preset);
+
+  if (normalized === 'Today') {
+    return { startDate: toDateInputValue(startOfDay(endDate)), endDate: toDateInputValue(endOfDay(endDate)) };
+  }
+  if (normalized === 'Yesterday') {
+    const yesterday = addDays(endDate, -1);
+    return { startDate: toDateInputValue(startOfDay(yesterday)), endDate: toDateInputValue(endOfDay(yesterday)) };
+  }
+  if (normalized === 'Last 7 Days') {
+    return { startDate: toDateInputValue(startOfDay(addDays(endDate, -6))), endDate: toDateInputValue(endOfDay(endDate)) };
+  }
+  if (normalized === 'Last 30 Days') {
+    return { startDate: toDateInputValue(startOfDay(addDays(endDate, -29))), endDate: toDateInputValue(endOfDay(endDate)) };
+  }
+  if (normalized === 'This Month') {
+    return {
+      startDate: toDateInputValue(new Date(endDate.getFullYear(), endDate.getMonth(), 1)),
+      endDate: toDateInputValue(endOfDay(endDate))
+    };
+  }
+  return { startDate: '', endDate: '' };
+};
+
+const getSuggestedPeriodForRange = (range, startDate, endDate) => {
+  const normalized = normalizeDateRangeLabel(range);
+  if (normalized === 'Today' || normalized === 'Yesterday') return 'Daily';
+  if (normalized === 'Last 7 Days') return 'Weekly';
+  if (normalized === 'Last 30 Days' || normalized === 'This Month' || normalized === 'Last Month') return 'Monthly';
+  if (normalized === 'This Quarter') return 'Quarterly';
+  if (normalized === 'This Year') return 'Yearly';
+  if (normalized === 'Custom Range' && startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      const days = Math.max(1, Math.round((end - start) / dayMs) + 1);
+      if (days <= 1) return 'Daily';
+      if (days <= 7) return 'Weekly';
+      if (days <= 31) return 'Monthly';
+      if (days <= 92) return 'Quarterly';
+      return 'Yearly';
+    }
+  }
+  return 'Monthly';
+};
+
+const getRangeDisplayText = filters => {
+  const range = normalizeDateRangeLabel(filters?.range);
+  if (range === 'Custom Range' && filters?.startDate && filters?.endDate) {
+    return `${formatRangeDate(filters.startDate)} - ${formatRangeDate(filters.endDate)}`;
+  }
+  if (range === 'All Time') return '';
+  return range;
+};
+
+const parseDateInputValue = value => {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const startOfMonth = date => new Date(date.getFullYear(), date.getMonth(), 1);
+const addMonths = (date, months) => new Date(date.getFullYear(), date.getMonth() + months, 1);
+const isSameDay = (left, right) => (
+  !!left && !!right
+  && left.getFullYear() === right.getFullYear()
+  && left.getMonth() === right.getMonth()
+  && left.getDate() === right.getDate()
+);
+
+const isBeforeDay = (left, right) => {
+  if (!left || !right) return false;
+  const leftTime = new Date(left.getFullYear(), left.getMonth(), left.getDate()).getTime();
+  const rightTime = new Date(right.getFullYear(), right.getMonth(), right.getDate()).getTime();
+  return leftTime < rightTime;
+};
+
+const formatMonthTitle = date => new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  year: 'numeric'
+}).format(date);
+
+const buildMonthCalendar = (monthDate, startDate, endDate) => {
+  const firstDay = startOfMonth(monthDate);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0).getDate();
+  const today = new Date();
+  const rangeStart = parseDateInputValue(startDate);
+  const rangeEnd = parseDateInputValue(endDate);
+  const rangeLow = rangeStart && rangeEnd && isBeforeDay(rangeEnd, rangeStart) ? rangeEnd : rangeStart;
+  const rangeHigh = rangeStart && rangeEnd && isBeforeDay(rangeEnd, rangeStart) ? rangeStart : rangeEnd;
+  const cells = [];
+
+  for (let index = 0; index < startOffset; index += 1) {
+    cells.push(null);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(firstDay.getFullYear(), firstDay.getMonth(), day);
+    const inRange = rangeLow && rangeHigh && date >= new Date(rangeLow.getFullYear(), rangeLow.getMonth(), rangeLow.getDate()) && date <= new Date(rangeHigh.getFullYear(), rangeHigh.getMonth(), rangeHigh.getDate());
+    cells.push({
+      date,
+      label: day,
+      isToday: isSameDay(date, today),
+      isSelectedStart: isSameDay(date, rangeLow),
+      isSelectedEnd: isSameDay(date, rangeHigh),
+      isInRange: inRange
+    });
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+
+  const weeks = [];
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push(cells.slice(index, index + 7));
+  }
+
+  return weeks;
+};
+
+const getDateBoundsFromRows = rows => {
+  const dates = (Array.isArray(rows) ? rows : [])
+    .map(row => parseDateInputValue(row?.date || row?.transactionDate || row?.salesDate))
+    .filter(Boolean)
+    .sort((left, right) => left - right);
+  if (!dates.length) return { earliest: null, latest: null };
+  return {
+    earliest: dates[0],
+    latest: dates[dates.length - 1]
+  };
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -77,18 +261,42 @@ const getLocalPointer = event => {
   };
 };
 
-function CardHeader({ title, subtitle, action, className = '' }) {
+function CardHeader({ title, subtitle, action, className = '', onTitleClick }) {
   return (
     <div className={`dashboard-card-header ${className}`.trim()}>
-      <h2>{title}</h2>
+      <h2>
+        {onTitleClick ? (
+          <button
+            type="button"
+            className="dashboard-card-title-toggle"
+            onClick={event => {
+              event.stopPropagation();
+              onTitleClick(event);
+            }}
+          >
+            {title}
+          </button>
+        ) : title}
+      </h2>
       {action || (subtitle ? <p>{subtitle}</p> : null)}
     </div>
   );
 }
 
-function Header({ filters, onFilterChange }) {
+function Header({ filters, onFilterChange, calendarAnchorDate, calendarStartDate, calendarEndDate }) {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const isTimelineActive = filters.timeline && filters.timeline !== 'Disable';
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [draftRange, setDraftRange] = useState(normalizeDateRangeLabel(filters.range));
+  const [draftStartDate, setDraftStartDate] = useState(filters.startDate || '');
+  const [draftEndDate, setDraftEndDate] = useState(filters.endDate || '');
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const initialDate = parseDateInputValue(filters.startDate)
+      || parseDateInputValue(filters.endDate)
+      || calendarAnchorDate
+      || new Date();
+    return startOfMonth(initialDate);
+  });
+  const datePickerRef = useRef(null);
 
   useEffect(() => {
     const clock = window.setInterval(() => {
@@ -98,7 +306,112 @@ function Header({ filters, onFilterChange }) {
     return () => window.clearInterval(clock);
   }, []);
 
+  useEffect(() => {
+    if (!isDatePickerOpen) return undefined;
+
+    setDraftRange(normalizeDateRangeLabel(filters.range));
+    const fallbackStart = calendarStartDate ? toDateInputValue(calendarStartDate) : '';
+    const fallbackEnd = calendarEndDate ? toDateInputValue(calendarEndDate) : '';
+    setDraftStartDate(filters.startDate || fallbackStart);
+    setDraftEndDate(filters.endDate || fallbackEnd);
+    const initialDate = parseDateInputValue(filters.startDate)
+      || parseDateInputValue(filters.endDate)
+      || calendarAnchorDate
+      || calendarStartDate
+      || new Date();
+    setCalendarMonth(startOfMonth(initialDate));
+
+    const handlePointerDown = event => {
+      if (!datePickerRef.current?.contains(event.target)) {
+        setIsDatePickerOpen(false);
+      }
+    };
+
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') setIsDatePickerOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [calendarAnchorDate, calendarEndDate, calendarStartDate, filters.endDate, filters.range, filters.startDate, isDatePickerOpen]);
+
+  const applyDateRange = () => {
+    const nextRange = normalizeDateRangeLabel(draftRange);
+    let startDate = '';
+    let endDate = '';
+
+    if (nextRange === 'Custom Range') {
+      startDate = draftStartDate;
+      endDate = draftEndDate;
+      if (!startDate || !endDate) return;
+    } else {
+      const window = getPresetRangeWindow(nextRange, {
+        anchorDate: calendarAnchorDate,
+        earliestDate: calendarStartDate,
+        latestDate: calendarEndDate
+      });
+      startDate = window.startDate;
+      endDate = window.endDate;
+    }
+
+    onFilterChange({
+      range: nextRange,
+      startDate,
+      endDate,
+      period: getSuggestedPeriodForRange(nextRange, startDate, endDate)
+    });
+    setIsDatePickerOpen(false);
+  };
+
+  const handlePresetClick = preset => {
+    const nextRange = normalizeDateRangeLabel(preset);
+    if (nextRange === 'Custom Range') {
+      setDraftRange(nextRange);
+      return;
+    }
+    const window = getPresetRangeWindow(nextRange, {
+      anchorDate: calendarAnchorDate,
+      earliestDate: calendarStartDate,
+      latestDate: calendarEndDate
+    });
+    setDraftRange(nextRange);
+    setDraftStartDate(window.startDate);
+    setDraftEndDate(window.endDate);
+    const initialDate = parseDateInputValue(window.startDate) || new Date();
+    setCalendarMonth(startOfMonth(initialDate));
+  };
+
+  const handleCalendarDayClick = day => {
+    if (!day) return;
+    const selectedValue = toDateInputValue(day.date);
+    if (!draftStartDate || (draftStartDate && draftEndDate)) {
+      setDraftRange('Custom Range');
+      setDraftStartDate(selectedValue);
+      setDraftEndDate('');
+      return;
+    }
+
+    const start = parseDateInputValue(draftStartDate);
+    if (start && isBeforeDay(day.date, start)) {
+      setDraftStartDate(selectedValue);
+      setDraftEndDate(toDateInputValue(start));
+      setDraftRange('Custom Range');
+      return;
+    }
+
+    setDraftRange('Custom Range');
+    setDraftEndDate(selectedValue);
+  };
+
+  const monthWeeks = buildMonthCalendar(calendarMonth, draftStartDate, draftEndDate);
   const liveTime = currentTime.toLocaleTimeString();
+  const rangeSummary = getRangeDisplayText(filters);
+  const isApplyDisabled = draftRange === 'Custom Range' && (!draftStartDate || !draftEndDate);
   return (
     <header className="presentation-header present-header">
       <div className="presentation-brand">
@@ -115,19 +428,6 @@ function Header({ filters, onFilterChange }) {
       </div>
 
       <div className="presentation-actions">
-        <label className={`presentation-header-control${isTimelineActive ? ' is-disabled' : ''}`}>
-          <span>Period</span>
-          <select
-            value={filters.period}
-            onChange={event => onFilterChange('period', event.target.value)}
-            disabled={isTimelineActive}
-            aria-disabled={isTimelineActive}
-          >
-            {headerPeriodOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        </label>
         <label className="presentation-header-control">
           <span>Timeline</span>
           <select value={filters.timeline || 'Disable'} onChange={event => onFilterChange('timeline', event.target.value)}>
@@ -144,6 +444,122 @@ function Header({ filters, onFilterChange }) {
             ))}
           </select>
         </label>
+        <div className="presentation-header-control presentation-date-control" ref={datePickerRef}>
+          <span>Period</span>
+          <div className="presentation-date-control-row">
+            <button
+              type="button"
+              className="presentation-date-trigger"
+              onClick={() => setIsDatePickerOpen(current => !current)}
+              aria-label="Open date range picker"
+            >
+              <Calendar size={20} strokeWidth={2.6} />
+            </button>
+            {rangeSummary ? (
+              <span className="presentation-date-range" title={rangeSummary}>{rangeSummary}</span>
+            ) : null}
+          </div>
+          <AnimatePresence>
+            {isDatePickerOpen && (
+              <motion.div
+                className="presentation-date-popover"
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+              >
+                <div className="presentation-date-popover-shell">
+                  <div className="presentation-date-popover-presets" role="list" aria-label="Date range presets">
+                    {dateRangeOptions.map(option => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`presentation-date-preset${draftRange === option ? ' is-active' : ''}`}
+                        onClick={() => handlePresetClick(option)}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="presentation-date-calendar">
+                    <div className="presentation-date-calendar-header">
+                      <span>{formatMonthTitle(calendarMonth)}</span>
+                      <div className="presentation-date-calendar-nav">
+                        <button type="button" onClick={() => setCalendarMonth(month => addMonths(month, -1))} aria-label="Previous month">
+                          <ChevronLeft size={16} />
+                        </button>
+                        <button type="button" onClick={() => setCalendarMonth(month => addMonths(month, 1))} aria-label="Next month">
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="presentation-date-calendar-weekdays" aria-hidden="true">
+                      {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(day => <span key={day}>{day}</span>)}
+                    </div>
+                    <div className="presentation-date-calendar-grid" role="grid" aria-label="Calendar days">
+                      {monthWeeks.flatMap((week, weekIndex) => week.map((day, dayIndex) => {
+                        if (!day) {
+                          return <span key={`empty-${weekIndex}-${dayIndex}`} className="presentation-date-calendar-cell is-empty" />;
+                        }
+
+                        const classes = [
+                          'presentation-date-calendar-cell',
+                          day.isToday ? 'is-today' : '',
+                          day.isInRange ? 'is-in-range' : '',
+                          day.isSelectedStart ? 'is-range-start' : '',
+                          day.isSelectedEnd ? 'is-range-end' : ''
+                        ].filter(Boolean).join(' ');
+
+                        return (
+                          <button
+                            key={day.date.toISOString()}
+                            type="button"
+                            className={classes}
+                            onClick={() => handleCalendarDayClick(day)}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      }))}
+                    </div>
+                  </div>
+                </div>
+                <div className="presentation-date-popover-custom">
+                  <label>
+                    <span>Start Date</span>
+                    <input
+                      type="date"
+                      value={draftStartDate}
+                      onChange={event => {
+                        setDraftRange('Custom Range');
+                        setDraftStartDate(event.target.value);
+                      }}
+                    />
+                  </label>
+                  <label>
+                    <span>End Date</span>
+                    <input
+                      type="date"
+                      value={draftEndDate}
+                      onChange={event => {
+                        setDraftRange('Custom Range');
+                        setDraftEndDate(event.target.value);
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="presentation-date-popover-actions">
+                  <button type="button" className="presentation-date-secondary" onClick={() => setIsDatePickerOpen(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="presentation-date-primary" onClick={applyDateRange} disabled={isApplyDisabled}>
+                    Apply
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <div className="presentation-live-clock" aria-live="polite">
           <strong>{liveTime}</strong>
         </div>
@@ -275,41 +691,56 @@ function Companies({ data, enlarged = false }) {
 
   return (
     <motion.article className={`dashboard-card companies-card${enlarged ? ' is-enlarged' : ''}`} variants={panelMotion}>
-      <CardHeader title="Top 10 Companies" subtitle="Company total purchases" />
+      <CardHeader title="Top 10 Companies" subtitle="Amount, sales performance, and payment terms" />
       <PresentationTooltip tooltip={tooltip} />
-      <AutoScrollList
-        className="company-list"
-        items={data}
-        duration={38}
-        renderItem={(company, index, isDuplicate) => (
-          <article
-            key={`${company.name}-${isDuplicate ? 'loop' : 'row'}-${index}`}
-            className={`${activeCompany === index ? 'is-active' : ''}${hasActiveCompany && activeCompany !== index ? ' is-muted' : ''}`.trim()}
-            onMouseMove={event => {
-              setActiveCompany(index);
-              setTooltip({
-                ...getLocalPointer(event),
-                title: company.name,
-                lines: [`Total: ${company.amount}`, `Share: ${formatShare(company.progress)}%`, `Sales Rep: ${company.salesRep || 'Unassigned'}`]
-              });
-            }}
-            onMouseLeave={() => {
-              setActiveCompany(null);
-              setTooltip(null);
-            }}
-          >
-            <div>
-              <span className="company-rank">{company.rank || index + 1}</span>
-              <span className="company-rep-avatar" title={company.salesRep || 'Unassigned'}>
-                {company.repAvatar ? <img src={company.repAvatar} alt="" /> : (company.salesRep || company.name || '?').slice(0, 1)}
-              </span>
-              <strong>{company.name}</strong>
-              <span>{company.amount}</span>
-            </div>
-            <i><b style={{ width: `${company.progress}%`, background: company.color }} /></i>
-          </article>
-        )}
-      />
+      <div className="company-table-shell">
+        <AutoScrollList
+          className="company-table-list"
+          items={data}
+          duration={38}
+          renderItem={(company, index, isDuplicate) => {
+            const name = company.companyName || company.name || 'Unassigned';
+            const performance = company.salesPerformance || 'Retention';
+            const term = company.paymentTerm || 'Unspecified';
+            const photo = company.companyPhoto;
+            return (
+              <article
+                key={`${name}-${isDuplicate ? 'loop' : 'row'}-${index}`}
+                className={`${activeCompany === index ? 'is-active' : ''}${hasActiveCompany && activeCompany !== index ? ' is-muted' : ''}`.trim()}
+                onMouseMove={event => {
+                  setActiveCompany(index);
+                  setTooltip({
+                    ...getLocalPointer(event),
+                    title: name,
+                    lines: [
+                      `Amount: ${company.amount}`,
+                      `Sales Performance: ${performance}`,
+                      `Terms: ${term}`
+                    ]
+                  });
+                }}
+                onMouseLeave={() => {
+                  setActiveCompany(null);
+                  setTooltip(null);
+                }}
+              >
+                <div className="company-row-left">
+                  <span className="company-rank">{company.rank || index + 1}</span>
+                  <span className="company-photo" title={name}>
+                    {photo ? <img src={photo} alt="" /> : name.slice(0, 1)}
+                  </span>
+                  <strong title={name}>{name}</strong>
+                </div>
+                <div className="company-row-right">
+                  <span className="company-amount">{company.amount}</span>
+                  <span className={`company-status is-${String(performance).toLowerCase().replace(/\s+/g, '-')}`}>{performance}</span>
+                  <span className="company-term">{term}</span>
+                </div>
+              </article>
+            );
+          }}
+        />
+      </div>
     </motion.article>
   );
 }
@@ -329,6 +760,14 @@ const productModeCopy = {
     valueLabel: value => `${toNumber(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TONS`,
     centerValueLabel: value => toNumber(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
+};
+
+const termsModeCopy = {
+  label: 'TERMS',
+  totalLabel: 'TOTAL TERMS',
+  centerMetricLabel: 'TERMS',
+  valueLabel: value => formatCompactCurrency(value),
+  centerValueLabel: value => Math.round(value).toLocaleString()
 };
 
 const productModes = ['quantity', 'tons'];
@@ -390,6 +829,24 @@ const buildVisiblePresentationProducts = source => {
   return [...topProducts, others];
 };
 
+const buildVisiblePresentationTerms = source => (
+  (Array.isArray(source) ? source : [])
+    .map(term => ({
+      ...term,
+      name: term.name || term.label || 'Term',
+      label: term.label || term.name || 'Term',
+      amount: toNumber(term.rawValue ?? term.amount ?? term.totalSalesAmount ?? term.value),
+      totalLabel: formatCompactCurrency(term.rawValue ?? term.amount ?? term.totalSalesAmount ?? term.value),
+      color: term.color || '#D16002'
+    }))
+    .filter(term => term.amount > 0)
+    .sort((a, b) => {
+      const amountDelta = b.amount - a.amount;
+      if (amountDelta) return amountDelta;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    })
+);
+
 const validateProductPieRows = (sourceRows, chartRows, mode) => {
   const sourceSignature = buildVisiblePresentationProducts(sourceRows)
     .filter(product => toNumber(product[mode]) > 0)
@@ -409,26 +866,47 @@ const validateProductPieRows = (sourceRows, chartRows, mode) => {
   return valid;
 };
 
-function Products({ data, totals, validation, enlarged = false }) {
-  const [productMode, setProductMode] = useState('quantity');
+function Products({
+  data,
+  termsData,
+  totals,
+  validation,
+  enlarged = false,
+  viewMode,
+  onViewModeChange,
+  productMode,
+  onProductModeChange
+}) {
   const [isChartReady, setIsChartReady] = useState(false);
   const activeMode = productModeCopy[productMode] ? productMode : 'quantity';
+  const isTermsMode = viewMode === 'terms';
+  const activeCopy = isTermsMode ? termsModeCopy : productModeCopy[activeMode];
   const chartData = useMemo(() => {
-    const rows = buildVisiblePresentationProducts(data)
-      .map(product => ({
-        ...product,
-        rawValue: toNumber(product[activeMode]),
-        totalLabel: productModeCopy[activeMode].valueLabel(product[activeMode])
-      }))
-      .filter(product => product.rawValue > 0);
+    const rows = isTermsMode
+      ? buildVisiblePresentationTerms(termsData)
+          .map(term => ({
+            ...term,
+            rawValue: term.amount,
+            totalLabel: term.totalLabel,
+            amountLabel: term.totalLabel
+          }))
+      : buildVisiblePresentationProducts(data)
+          .map(product => ({
+            ...product,
+            rawValue: toNumber(product[activeMode]),
+            totalLabel: productModeCopy[activeMode].valueLabel(product[activeMode]),
+            displayValue: productModeCopy[activeMode].valueLabel(product[activeMode]),
+            amountLabel: formatCompactCurrency(product.revenue ?? product.sales)
+          }))
+      .filter(item => item.rawValue > 0);
     const denominator = rows.reduce((sum, row) => sum + toNumber(row.rawValue), 0) || 1;
-    return rows.map(product => ({
-      ...product,
-      value: Math.round((toNumber(product.rawValue) / denominator) * 1000) / 10,
-      color: product.color || (isOthersProduct(product) ? '#6f6f6f' : '#D16002')
+    return rows.map(item => ({
+      ...item,
+      value: Math.round((toNumber(item.rawValue) / denominator) * 1000) / 10,
+      color: item.color || (isTermsMode ? '#D16002' : (isOthersProduct(item) ? '#6f6f6f' : '#D16002'))
     }));
-  }, [activeMode, data]);
-  const isValid = validation?.valid !== false && validateProductPieRows(data, chartData, activeMode);
+  }, [activeMode, data, isTermsMode, termsData]);
+  const isValid = isTermsMode || (validation?.valid !== false && validateProductPieRows(data, chartData, activeMode));
   const [activeProduct, setActiveProduct] = useState(null);
   const [tooltip, setTooltip] = useState(null);
   const productRefs = useRef({});
@@ -436,8 +914,10 @@ function Products({ data, totals, validation, enlarged = false }) {
   const donutRef = useRef(null);
   const fallbackSize = enlarged ? 380 : 270;
   const observedSize = useResizeObserverSize(donutRef, fallbackSize);
-  const total = toNumber(totals?.[activeMode] || chartData.reduce((sum, product) => sum + product.rawValue, 0));
-  const centerValueLabel = productModeCopy[activeMode].centerValueLabel(total);
+  const total = isTermsMode
+    ? chartData.reduce((sum, term) => sum + toNumber(term.count), 0)
+    : toNumber(totals?.[activeMode] || chartData.reduce((sum, product) => sum + product.rawValue, 0));
+  const centerValueLabel = activeCopy.centerValueLabel(total);
   const measuredSize = Math.min(observedSize.width, observedSize.height) * 0.9;
   const size = Math.round(clamp(measuredSize || fallbackSize, 120, measuredSize || fallbackSize));
   const center = size / 2;
@@ -457,14 +937,18 @@ function Products({ data, totals, validation, enlarged = false }) {
     name: product.name,
     color: product.color,
     percentage: product.value,
-    value: product.totalLabel
+    count: isTermsMode ? (product.count || 0) : toNumber(product[activeMode] ?? product.quantity),
+    displayValue: isTermsMode ? (product.count || 0) : productModeCopy[activeMode].valueLabel(product[activeMode]),
+    amountLabel: product.amountLabel || product.totalLabel
   }));
   let offset = 0;
   const hasActiveProduct = Boolean(activeProduct);
 
   useEffect(() => {
     productListRef.current?.scrollTo?.({ top: 0 });
-  }, [activeMode]);
+    setActiveProduct(null);
+    setTooltip(null);
+  }, [activeMode, viewMode]);
 
   const clearProductHover = () => {
     setActiveProduct(null);
@@ -487,25 +971,35 @@ function Products({ data, totals, validation, enlarged = false }) {
     console.error('[product-pie-validation] Products pie source mismatch.', validation?.invalidProducts || []);
   }, [isValid, validation]);
 
+  useEffect(() => {
+    setActiveProduct(null);
+    setTooltip(null);
+    productListRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' });
+  }, [viewMode]);
+
   return (
     <motion.article className={`dashboard-card products-card${enlarged ? ' is-enlarged' : ''}`} variants={panelMotion}>
       <CardHeader
-        title="Products"
+        title={isTermsMode ? 'Terms' : 'Products'}
+        onTitleClick={() => onViewModeChange?.(current => (current === 'products' ? 'terms' : 'products'))}
+        subtitle={isTermsMode ? 'Payment terms share' : 'Product sales share'}
         action={(
-          <div className="products-card-action">
-            <p>Product sales share</p>
-            <button
-              type="button"
-              className={`product-mode-switch is-${activeMode}`}
-              onClick={event => {
-                event.stopPropagation();
-                setProductMode(current => productModes[(productModes.indexOf(current) + 1) % productModes.length] || 'quantity');
-              }}
-              aria-label="Switch products chart mode"
-            >
-              <span>{productModeCopy[activeMode].label}</span>
-            </button>
-          </div>
+          isTermsMode ? null : (
+            <div className="products-card-action">
+              <p>Product sales share</p>
+              <button
+                type="button"
+                className={`product-mode-switch is-${activeMode}`}
+                onClick={event => {
+                  event.stopPropagation();
+                  onProductModeChange?.(current => productModes[(productModes.indexOf(current) + 1) % productModes.length] || 'quantity');
+                }}
+                aria-label="Switch products chart mode"
+              >
+                <span>{productModeCopy[activeMode].label}</span>
+              </button>
+            </div>
+          )
         )}
       />
       <div className="products-layout" onMouseLeave={clearProductHover}>
@@ -515,7 +1009,7 @@ function Products({ data, totals, validation, enlarged = false }) {
           <svg
             className="products-donut-svg"
             viewBox={`0 0 ${size} ${size}`}
-            aria-label="Product sales share donut chart"
+            aria-label={isTermsMode ? 'Terms share donut chart' : 'Product sales share donut chart'}
             style={{ width: size, height: size }}
           >
               <defs>
@@ -541,12 +1035,14 @@ function Products({ data, totals, validation, enlarged = false }) {
                     transform={`rotate(-90 ${center} ${center}) translate(${center} ${center}) scale(${isActive ? 1.035 : 1}) translate(${-center} ${-center})`}
                     onMouseMove={event => {
                       setActiveProduct(product.name);
-                      setTooltip({
-                        ...getLocalPointer(event),
-                        title: product.name,
-                        lines: [`Share: ${formatShare(product.value)}%`, `Total: ${product.totalLabel}`]
-                      });
-                    }}
+                    setTooltip({
+                      ...getLocalPointer(event),
+                      title: product.name,
+                      lines: isTermsMode
+                        ? [`Count: ${product.count || 0}`, `Amount: ${product.amountLabel}`]
+                          : [`Total ${activeCopy.centerMetricLabel.toLowerCase()}: ${product.displayValue}`, `Amount: ${formatCompactCurrency(product.revenue ?? product.sales)}`]
+                    });
+                  }}
                     onFocus={() => setActiveProduct(product.name)}
                     onBlur={() => setActiveProduct(null)}
                     tabIndex="0"
@@ -583,15 +1079,15 @@ function Products({ data, totals, validation, enlarged = false }) {
           >
             <strong>{centerValueLabel}</strong>
             <span>Total</span>
-            <small>{productModeCopy[activeMode].centerMetricLabel}</small>
+            <small>{activeCopy.centerMetricLabel}</small>
           </div>
         </div>
 
         <div
-          className="product-pie-list"
+          className={`product-pie-list${isTermsMode ? ' is-terms' : ' is-products'}`}
           ref={productListRef}
           role="list"
-          aria-label="Product pie contents"
+          aria-label={isTermsMode ? 'Terms pie contents' : 'Product pie contents'}
           onWheel={event => event.stopPropagation()}
           onScroll={event => event.stopPropagation()}
         >
@@ -607,24 +1103,26 @@ function Products({ data, totals, validation, enlarged = false }) {
                 className={`${isActive ? 'is-active' : ''}${isMuted ? ' is-muted' : ''}`.trim()}
                 onMouseMove={event => {
                   setActiveProduct(item.name);
-                  setTooltip({
-                    ...getLocalPointer(event),
-                    title: item.name,
-                    lines: [`Share: ${formatShare(item.percentage)}%`, `Total: ${item.value}`]
-                  });
+                    setTooltip({
+                      ...getLocalPointer(event),
+                      title: item.name,
+                      lines: isTermsMode
+                        ? [`Count: ${item.count || 0}`, `Amount: ${item.amountLabel}`]
+                      : [`Total ${activeCopy.centerMetricLabel.toLowerCase()}: ${item.displayValue}`, `Amount: ${item.amountLabel}`]
+                    });
                 }}
                 onFocus={() => setActiveProduct(item.name)}
                 onBlur={() => setActiveProduct(null)}
                 tabIndex="0"
                 role="listitem"
-              >
-                <i style={{ background: item.color }} />
-                <strong title={item.name}>{item.name}</strong>
-                <b>{item.percentage % 1 === 0 ? item.percentage : item.percentage.toFixed(1)}%</b>
-                <span>{item.value}</span>
-              </article>
-            );
-          })}
+                >
+                  <i style={{ background: item.color }} />
+                  <strong title={item.name}>{item.name}</strong>
+                <b>{item.displayValue || item.count}</b>
+                  <span>{item.amountLabel}</span>
+                </article>
+              );
+            })}
           {!pieGraphContents.length && (
             <article className="product-pie-list-empty">
               <strong>No product data</strong>
@@ -638,46 +1136,114 @@ function Products({ data, totals, validation, enlarged = false }) {
 }
 
 function Counter({ data, enlarged = false }) {
-  const chartData = data.length ? data : [];
+  const chartData = [...(data.length ? data : [])].sort((a, b) => {
+    const delta = toNumber(b.count) - toNumber(a.count);
+    if (delta) return delta;
+    return String(a.displayLabel || a.label || '').localeCompare(String(b.displayLabel || b.label || ''));
+  });
   const [activeCounter, setActiveCounter] = useState(null);
   const [tooltip, setTooltip] = useState(null);
-  const maxCount = Math.max(1, ...chartData.map(counter => toNumber(counter.count)));
   const hasActiveCounter = activeCounter !== null;
+  const width = enlarged ? 720 : 600;
+  const height = enlarged ? 360 : 286;
+  const padding = { top: 16, right: 18, bottom: 42, left: 42 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const barGap = chartData.length > 1 ? 54 : 0;
+  const barWidth = Math.max(78, (plotWidth - barGap * (chartData.length - 1)) / Math.max(1, chartData.length));
+  const axisTicks = [0, 35, 70, 105, 140];
+  const yMax = axisTicks[axisTicks.length - 1];
 
   return (
     <motion.article className={`dashboard-card counter-card${enlarged ? ' is-enlarged' : ''}`} variants={panelMotion}>
-      <CardHeader title="Sales Performance" subtitle="Closed deals, retention, and acquisition" />
-      <div className="counter-bar-chart" role="list" aria-label="Counter type bar chart" onMouseLeave={() => { setActiveCounter(null); setTooltip(null); }}>
+      <CardHeader title="Sales Performance" subtitle="Acquisition, retention, and revival" />
+      <div className="chart-container counter-bar-chart" onMouseLeave={() => { setActiveCounter(null); setTooltip(null); }}>
         <PresentationTooltip tooltip={tooltip} />
-        {chartData.map((counter, index) => {
-          const counterValue = counter.count.toLocaleString();
-          const counterShare = `${formatShare(counter.percentage)}%`;
-          return (
-            <article
-              className={`counter-bar-row${activeCounter === index ? ' is-active' : ''}${hasActiveCounter && activeCounter !== index ? ' is-muted' : ''}`}
-              key={counter.rawLabel || counter.label}
-              role="listitem"
-              style={{ '--counter-color': counter.color, '--counter-share': `${(toNumber(counter.count) / maxCount) * 100}%` }}
-              onMouseMove={event => {
-                setActiveCounter(index);
-                setTooltip({
-                  ...getLocalPointer(event),
-                  title: counter.label,
-                  lines: [`Total: ${counterValue}`, `Share: ${counterShare}`]
-                });
-              }}
-            >
-              <div className="counter-bar-meta">
-                <strong>{String(counter.label || '').toUpperCase()}</strong>
-                <b>{counterValue}</b>
-                <span>{counterShare}</span>
-              </div>
-              <div className="counter-bar-track" aria-hidden="true">
-                <i />
-              </div>
-            </article>
-          );
-        })}
+        <svg
+          className="sales-performance-graph"
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label="Sales performance bar graph"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {axisTicks.map(tick => {
+            const y = padding.top + plotHeight - ((tick / yMax) * plotHeight);
+            return (
+              <g key={tick}>
+                <line
+                  x1={padding.left}
+                  y1={y}
+                  x2={width - padding.right}
+                  y2={y}
+                  stroke="rgba(255,255,255,0.12)"
+                  strokeDasharray="4 5"
+                  strokeWidth="1"
+                />
+                <text
+                  x={padding.left - 10}
+                  y={y + 4}
+                  textAnchor="end"
+                  fill="#475569"
+                  fontSize={12}
+                  fontWeight="800"
+                >
+                  {tick}
+                </text>
+              </g>
+            );
+          })}
+          {chartData.map((counter, index) => {
+            const value = toNumber(counter.count);
+            const ratio = Math.max(value / yMax, 0);
+            const label = counter.displayLabel || counter.label;
+            const x = padding.left + index * (barWidth + barGap);
+            const barHeight = Math.max(14, plotHeight * ratio);
+            const y = padding.top + (plotHeight - barHeight);
+            const isActive = activeCounter === index;
+            const isMuted = hasActiveCounter && activeCounter !== index;
+            const centerX = x + barWidth / 2;
+            const labelY = height - 12;
+            const labelFill = '#1f2937';
+
+            return (
+              <g
+                key={counter.rawLabel || counter.label}
+                className={`sales-performance-bar${isActive ? ' is-active' : ''}${isMuted ? ' is-muted' : ''}`}
+                onMouseMove={event => {
+                  setActiveCounter(index);
+                  setTooltip({
+                    ...getLocalPointer(event),
+                    title: label,
+                    lines: [`Total: ${value.toLocaleString()}`, `Share: ${formatShare(counter.percentage)}%`]
+                  });
+                }}
+              >
+                <rect
+                  x={x}
+                  y={y}
+                  width={barWidth}
+                  height={barHeight}
+                  rx="12"
+                  fill={counter.color}
+                  opacity={isMuted ? 0.42 : 1}
+                  style={isActive ? { filter: 'drop-shadow(0 0 10px rgba(255,159,67,0.28))' } : undefined}
+                />
+                <text
+                  x={centerX}
+                  y={labelY}
+                  textAnchor="middle"
+                  fill={labelFill}
+                  fontSize={12}
+                  fontWeight="900"
+                  stroke="rgba(255,255,255,0.6)"
+                  strokeWidth="0.4"
+                >
+                  {label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
       </div>
     </motion.article>
   );
@@ -730,6 +1296,12 @@ export default function DashboardPresentationView() {
   const { filters, presentationData } = analytics;
   const isTimelineActive = filters.timeline && filters.timeline !== 'Disable';
   const [focusedPanel, setFocusedPanel] = useState(null);
+  const [productsViewMode, setProductsViewMode] = useState('products');
+  const [productsMetricMode, setProductsMetricMode] = useState('quantity');
+  const calendarDateBounds = useMemo(
+    () => getDateBoundsFromRows(analytics.liveData?.rawRows || []),
+    [analytics.liveData?.rawRows]
+  );
 
   useEffect(() => {
     const updatePresentationScale = () => {
@@ -754,6 +1326,10 @@ export default function DashboardPresentationView() {
   }, [analytics]);
 
   const updateFilter = (key, value) => {
+    if (key && typeof key === 'object') {
+      writeDashboardFilters(key);
+      return;
+    }
     writeDashboardFilters({ [key]: value });
   };
 
@@ -767,20 +1343,19 @@ export default function DashboardPresentationView() {
         visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.06 } }
       }}
     >
-      <Header filters={filters} onFilterChange={updateFilter} />
+      <Header
+        filters={filters}
+        onFilterChange={updateFilter}
+        calendarAnchorDate={calendarDateBounds.earliest || calendarDateBounds.latest || new Date()}
+        calendarStartDate={calendarDateBounds.earliest}
+        calendarEndDate={calendarDateBounds.latest}
+      />
       <StatsGrid data={presentationData.kpis} onFocus={setFocusedPanel} />
 
       <section className="middle-grid">
-        <FocusShell title="Sales Comparison" onFocus={setFocusedPanel}>
+        <FocusShell title="Sales Performance" onFocus={setFocusedPanel}>
           {enlarged => (
-            <SalesComparisonChart
-              data={presentationData.salesComparison}
-              metric={filters.metric}
-              enlarged={enlarged}
-              withCard
-              CardHeaderComponent={CardHeader}
-              panelMotion={panelMotion}
-            />
+            <Counter data={presentationData.counters} enlarged={enlarged} />
           )}
         </FocusShell>
         <FocusShell title="Top 10 Companies" onFocus={setFocusedPanel}>
@@ -793,14 +1368,16 @@ export default function DashboardPresentationView() {
           {enlarged => (
             <Products
               data={presentationData.products}
+              termsData={presentationData.terms}
               totals={presentationData.productTotals}
               validation={presentationData.productValidation}
               enlarged={enlarged}
+              viewMode={productsViewMode}
+              onViewModeChange={setProductsViewMode}
+              productMode={productsMetricMode}
+              onProductModeChange={setProductsMetricMode}
             />
           )}
-        </FocusShell>
-        <FocusShell title="Sales Performance" onFocus={setFocusedPanel}>
-          {enlarged => <Counter data={presentationData.counters} enlarged={enlarged} />}
         </FocusShell>
         <FocusShell title="Sales Rep Rankings" onFocus={setFocusedPanel}>
           {enlarged => <Rankings data={presentationData.reps} enlarged={enlarged} />}

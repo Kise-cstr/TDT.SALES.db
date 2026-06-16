@@ -2254,7 +2254,7 @@
 
 .bottom-grid {
   display: grid;
-  grid-template-columns: 1.6fr 0.8fr 0.9fr;
+  grid-template-columns: 1.45fr 0.7fr 1.15fr;
   gap: 20px;
   width: 100%;
   min-width: 0;
@@ -2382,6 +2382,19 @@
   min-height: 482px;
 }
 
+.company-table-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .company-list,
 .rankings-list {
   display: grid;
@@ -2395,45 +2408,178 @@
   z-index: 1;
 }
 
-.company-list article {
-  min-height: 66px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 48%);
-  align-items: center;
-  gap: 16px;
-  padding: 13px 14px;
-  border-radius: 14px;
-  background: rgba(8,8,8,0.48);
+.company-table-list {
+  width: 100%;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,140,0,0.56) rgba(255,255,255,0.04);
 }
 
-.company-list strong {
+.company-table-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.company-table-list::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+}
+
+.company-table-list::-webkit-scrollbar-thumb {
+  background: rgba(255,140,0,0.56);
+  border-radius: 999px;
+}
+
+.company-table-list article {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  min-width: 0;
+  width: 100%;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(243,240,234,0.92));
+  border: 1px solid rgba(230, 112, 38, 0.14);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+
+.company-table-list .company-row-left {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.company-table-list .company-row-left strong {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.company-table-list .company-row-right {
+  flex: 0 0 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.company-table-list strong {
   display: block;
-  color: #ffffff;
-  font-size: clamp(14px, 0.94vw, 18px);
+  color: #2c2c2c;
+  font-size: clamp(12px, 0.82vw, 15px);
   line-height: 1.05;
   font-weight: 950;
   text-transform: uppercase;
-}
-
-.company-list span {
-  display: block;
-  margin-top: 6px;
-  color: #9ca3af;
-  font-size: 14px;
-}
-
-.company-list i {
-  height: 9px;
   overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.10);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.company-list b {
-  display: block;
+.company-table-list .company-rank {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ff8c00;
+  color: #111111;
+  font-size: 13px;
+  font-weight: 950;
+  justify-self: center;
+  flex: 0 0 auto;
+}
+
+.company-table-list .company-photo {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffb15c, #d96a00);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.9);
+  color: #111111;
+  font-size: 15px;
+  font-weight: 950;
+  justify-self: center;
+}
+
+.company-table-list .company-photo img {
+  width: 100%;
   height: 100%;
-  min-width: 15px;
-  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
+
+.company-table-list .company-amount {
+  color: #d96a00;
+  font-size: 14px;
+  font-weight: 950;
+  text-align: right;
+  white-space: nowrap;
+  justify-self: end;
+  min-width: 106px;
+}
+
+.company-table-list .company-status,
+.company-table-list .company-term {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.company-table-list .company-status {
+  justify-self: center;
+  min-width: 112px;
+  background: rgba(255, 140, 0, 0.12);
+  color: #d96a00;
+}
+
+.company-table-list .company-status.is-revival {
+  background: rgba(185, 74, 4, 0.14);
+  color: #b94a04;
+}
+
+.company-table-list .company-status.is-acquisition {
+  background: rgba(209, 96, 2, 0.12);
+  color: #d16002;
+}
+
+.company-table-list .company-status.is-retention {
+  background: rgba(204, 85, 0, 0.12);
+  color: #cc5500;
+}
+
+.company-table-list .company-term {
+  justify-self: end;
+  min-width: 112px;
+  color: #4b5563;
+  text-align: right;
+}
+
+.company-table-list article.is-active {
+  box-shadow: 0 10px 22px rgba(0,0,0,0.12), 0 0 18px rgba(255, 140, 0, 0.08);
+}
+
+.company-table-list article.is-muted {
+  opacity: 0.45;
 }
 
 .products-card,
@@ -2897,12 +3043,12 @@ body:has(.presentation-dashboard),
 }
 
 .presentation-dashboard .middle-grid {
-  grid-template-columns: 2.3fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
 .presentation-dashboard .bottom-grid {
-  grid-template-columns: 1.6fr 0.8fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
@@ -3732,14 +3878,14 @@ body:has(.presentation-dashboard),
 
 .presentation-dashboard .middle-grid {
   display: grid;
-  grid-template-columns: 2.3fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
   min-height: 0;
 }
 
 .presentation-dashboard .bottom-grid {
   display: grid;
-  grid-template-columns: 1.55fr 0.75fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
   align-items: stretch;
   min-height: 0;
@@ -4262,77 +4408,16 @@ body:has(.presentation-dashboard),
   height: 100%;
   min-width: 0;
   min-height: 0;
-  display: grid;
-  align-content: center;
-  gap: clamp(14px, 1.75vh, 22px);
-  padding: clamp(14px, 2vh, 24px) clamp(8px, 0.9vw, 16px) clamp(10px, 1.5vh, 18px);
+  display: block;
+  padding: clamp(14px, 2vh, 24px) clamp(10px, 1vw, 18px) clamp(10px, 1.5vh, 18px);
   box-sizing: border-box;
   overflow: hidden;
 }
 
-.presentation-dashboard .counter-bar-row {
-  min-width: 0;
-  display: grid;
-  gap: clamp(7px, 0.8vh, 10px);
-}
-
-.presentation-dashboard .counter-bar-meta {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(112px, 1fr) minmax(38px, 52px) minmax(48px, 64px);
-  align-items: center;
-  gap: clamp(8px, 0.8vw, 14px);
-}
-
-.presentation-dashboard .counter-bar-meta strong,
-.presentation-dashboard .counter-bar-meta b,
-.presentation-dashboard .counter-bar-meta span {
-  min-width: 0;
-  color: #f7f1ea;
-  font-size: clamp(10px, 0.78vw, 14px);
-  line-height: 1;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.presentation-dashboard .counter-bar-meta strong {
-  text-align: left;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-.presentation-dashboard .counter-bar-meta b,
-.presentation-dashboard .counter-bar-meta span {
-  color: #fffaf2;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.presentation-dashboard .counter-bar-track {
-  position: relative;
+.presentation-dashboard .sales-performance-graph {
   width: 100%;
-  height: clamp(14px, 1.7vh, 20px);
-  overflow: hidden;
-  border: 1px solid rgba(255, 140, 0, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.075);
-  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.34);
-}
-
-.presentation-dashboard .counter-bar-track i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: max(8px, var(--counter-share));
-  border-radius: inherit;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--counter-color) 88%, #ffffff 12%), var(--counter-color) 58%, color-mix(in srgb, var(--counter-color) 70%, #17110d 30%));
-  box-shadow: 0 0 16px color-mix(in srgb, var(--counter-color) 46%, transparent 54%);
-  transition: width 220ms ease, filter 180ms ease, box-shadow 180ms ease;
-}
-
-.presentation-dashboard .counter-bar-row:hover .counter-bar-track i {
-  filter: brightness(1.08);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--counter-color) 58%, transparent 42%);
+  height: 100%;
+  display: block;
 }
 
 .presentation-dashboard .counter-pie-layout {
@@ -4565,7 +4650,7 @@ body:has(.presentation-dashboard),
 }
 
 .presentation-dashboard .rankings-card {
-  padding-inline: 14px;
+  padding-inline: 0;
 }
 
 .presentation-dashboard.is-timeline-active .stats-grid-item,

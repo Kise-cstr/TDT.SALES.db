@@ -119,6 +119,31 @@ const groupRecords = (records, getLabel, getValue = () => 1) => {
     .sort((a, b) => b.value - a.value);
 };
 
+const getUniqueCompanyGroups = (records = []) => {
+  const groups = new Map();
+
+  (Array.isArray(records) ? records : []).forEach(record => {
+    const companyName = normalizeName(record.clientName || record.companyName || record.name);
+    if (!companyName) return;
+
+    const key = entityKey(companyName);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        label: companyName,
+        name: companyName,
+        value: 0
+      });
+    }
+
+    const current = groups.get(key);
+    current.value += toNumber(record.grossSales || record.sales);
+    groups.set(key, current);
+  });
+
+  return Array.from(groups.values())
+    .sort((a, b) => b.value - a.value);
+};
+
 const buildRepRoster = (records = []) => {
   const roster = new Map();
 
@@ -368,6 +393,56 @@ const getQuotaDays = (records = [], period = 'Monthly') => {
   return daysInMonth(latest);
 };
 
+const getQuarterStartMonth = month => Math.floor(month / 3) * 3;
+
+const normalizeDateRangeLabel = range => {
+  const label = String(range || 'All Time').trim();
+  const lower = label.toLowerCase();
+  if (lower === 'current month') return 'This Month';
+  if (lower === 'last 3 months') return 'Last 3 Months';
+  if (lower === 'last 6 months') return 'Last 6 Months';
+  if (lower === 'year to date') return 'This Year';
+  if (lower === 'custom date range') return 'Custom Range';
+  return label || 'All Time';
+};
+
+const getRangeWindow = (range, filters = {}) => {
+  const now = new Date();
+  const normalizedRange = normalizeDateRangeLabel(range);
+  const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const endOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+  const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+
+  if (normalizedRange === 'All Time') return { rangeStart: null, rangeEnd: null };
+  if (normalizedRange === 'Today') return { rangeStart: startOfDay(now), rangeEnd: endOfDay(now) };
+  if (normalizedRange === 'Yesterday') {
+    const yesterday = addDays(now, -1);
+    return { rangeStart: startOfDay(yesterday), rangeEnd: endOfDay(yesterday) };
+  }
+  if (normalizedRange === 'Last 7 Days') return { rangeStart: startOfDay(addDays(now, -6)), rangeEnd: endOfDay(now) };
+  if (normalizedRange === 'Last 30 Days') return { rangeStart: startOfDay(addDays(now, -29)), rangeEnd: endOfDay(now) };
+  if (normalizedRange === 'This Month') return { rangeStart: new Date(now.getFullYear(), now.getMonth(), 1), rangeEnd: endOfDay(now) };
+  if (normalizedRange === 'Last Month') {
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    return { rangeStart: start, rangeEnd: end };
+  }
+  if (normalizedRange === 'This Quarter') {
+    const quarterStartMonth = getQuarterStartMonth(now.getMonth());
+    return { rangeStart: new Date(now.getFullYear(), quarterStartMonth, 1), rangeEnd: endOfDay(now) };
+  }
+  if (normalizedRange === 'This Year') return { rangeStart: new Date(now.getFullYear(), 0, 1), rangeEnd: endOfDay(now) };
+  if (normalizedRange === 'Custom Range' && filters.startDate && filters.endDate) {
+    const start = new Date(filters.startDate);
+    const end = new Date(filters.endDate);
+    return {
+      rangeStart: Number.isNaN(start.getTime()) ? null : startOfDay(start),
+      rangeEnd: Number.isNaN(end.getTime()) ? null : endOfDay(end)
+    };
+  }
+  return { rangeStart: null, rangeEnd: null };
+};
+
 export const getPeriodScopedRows = (rows = [], filters = {}) => {
   const sourceRows = Array.isArray(rows) ? rows : [];
   const datedRows = sourceRows
@@ -382,6 +457,8 @@ export const getPeriodScopedRows = (rows = [], filters = {}) => {
   if (period === 'Monthly') return datedRows.map(item => item.record);
 
   const latest = datedRows.reduce((max, item) => (item.date > max ? item.date : max), datedRows[0].date);
+  const quarterStartMonth = getQuarterStartMonth(latest.getMonth());
+  const quarterEndMonth = quarterStartMonth + 2;
 
   return datedRows
     .filter(({ date }) => {
@@ -389,6 +466,11 @@ export const getPeriodScopedRows = (rows = [], filters = {}) => {
       if (period === 'Weekly') {
         const diffDays = Math.floor((latest - date) / 86400000);
         return diffDays >= 0 && diffDays < 7;
+      }
+      if (period === 'Quarterly') {
+        return date.getFullYear() === latest.getFullYear()
+          && date.getMonth() >= quarterStartMonth
+          && date.getMonth() <= quarterEndMonth;
       }
       if (period === 'Yearly') return date.getFullYear() === latest.getFullYear();
       return true;
@@ -474,19 +556,24 @@ const buildLiveData = (records, productRecords = [], options = {}) => {
   const branchGroups = groupRecords(records, record => record.branch, () => 1);
   const counterGroups = groupRecords(records, record => record.counter || 'No Counter', () => 1);
   const termsGroups = groupRecords(records, record => record.terms || 'Unspecified', () => 1);
-  const companyGroups = groupRecords(records, record => record.clientName, record => record.grossSales);
+  const companyGroups = getUniqueCompanyGroups(records);
 
   const repTotals = new Map(repGroups.map(group => [entityKey(group.label), group]));
   const salesByRep = repRoster.map(rep => {
     const group = repTotals.get(entityKey(rep.label)) || { label: rep.label, value: 0 };
     const repRows = records.filter(record => entityKey(normalizeRep(record)) === entityKey(rep.label));
+    const uniqueCompanies = new Set(
+      repRows
+        .map(record => String(record.clientName || record.companyName || record.name || '').trim().toUpperCase())
+        .filter(Boolean)
+    );
     return {
       ...rep,
       label: rep.label,
       name: rep.name || rep.label,
       sales: group.value || 0,
       leads: repRows.length,
-      deals: repRows.length,
+      deals: uniqueCompanies.size || repRows.length,
       gk: repRows.reduce((sum, record) => sum + record.gk, 0)
     };
   }).sort((a, b) => {
@@ -667,17 +754,8 @@ export function filterLiveDashboardData(liveData = {}, filters = {}) {
   const selectedYear = filters.year && filters.year !== 'All Years' ? Number(filters.year) : null;
   const selectedMonthIndex = filters.month && filters.month !== 'All Months' ? monthNames.indexOf(filters.month) : -1;
   const selectedBranch = filters.branch && filters.branch !== 'all' ? entityKey(filters.branch) : '';
-  const range = filters.range || 'All Time';
-  const now = new Date();
-  const rangeStart = (() => {
-    if (range === 'Current Month') return new Date(now.getFullYear(), now.getMonth(), 1);
-    if (range === 'Last 3 Months') return new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    if (range === 'Last 6 Months') return new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    if (range === 'Year to Date') return new Date(now.getFullYear(), 0, 1);
-    if (range === 'Custom Date Range' && filters.startDate) return new Date(filters.startDate);
-    return null;
-  })();
-  const rangeEnd = range === 'Custom Date Range' && filters.endDate ? new Date(filters.endDate) : null;
+  const range = normalizeDateRangeLabel(filters.range || 'All Time');
+  const { rangeStart, rangeEnd } = getRangeWindow(range, filters);
 
   const matchesDate = record => {
     if (!selectedYear && selectedMonthIndex < 0 && !rangeStart && !rangeEnd) return true;

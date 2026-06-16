@@ -42,18 +42,34 @@ const buildPeriodSalesByRep = (rows = []) => {
   (Array.isArray(rows) ? rows : []).forEach(row => {
     const label = String(row.salesRep || row.repName || row.repCode || 'Unassigned').trim() || 'Unassigned';
     const key = label.toUpperCase();
-    const current = groups.get(key) || { label, sales: 0, gk: 0, deals: 0 };
+    const current = groups.get(key) || { label, sales: 0, gk: 0, deals: 0, companies: new Set() };
     current.sales += Number(row.grossSales || row.sales || 0);
     current.gk += Number(row.salesmanGk || row.gk || row.finalGk || 0);
     current.deals += 1;
+    const companyName = String(row.clientName || row.companyName || row.name || '').trim().toUpperCase();
+    if (companyName) current.companies.add(companyName);
     groups.set(key, current);
   });
-  return Array.from(groups.values());
+  return Array.from(groups.values()).map(rep => ({
+    ...rep,
+    deals: rep.companies?.size || rep.deals,
+    companies: rep.companies?.size || 0
+  }));
+};
+
+const buildUniqueClientCount = (rows = []) => {
+  const clients = new Set();
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    const name = String(row.clientName || row.companyName || row.name || '').trim().toUpperCase();
+    if (name) clients.add(name);
+  });
+  return clients.size;
 };
 
 const buildTeamPresentationData = (liveData, metric = 'all', filters = {}) => {
   const periodRows = getPeriodScopedRows(Array.isArray(liveData?.rawRows) ? liveData.rawRows : [], filters);
   const periodReps = buildPeriodSalesByRep(periodRows);
+  const periodClientCount = buildUniqueClientCount(periodRows);
   const liveReps = periodReps.length ? periodReps : Array.isArray(liveData?.salesByRep) ? liveData.salesByRep : [];
   if (!liveReps.length) {
     return {
@@ -73,7 +89,7 @@ const buildTeamPresentationData = (liveData, metric = 'all', filters = {}) => {
 
   return {
     metrics: [
-      { label: 'Active Reps', value: String(ranked.length), detail: 'From selected period' },
+      { label: 'Number of Clients', value: String(periodClientCount), detail: 'Unique company names' },
       { label: 'Top Performer', value: topRep?.label || 'N/A', detail: metric === 'sales' ? formatCompactCurrency(topRep?.sales) : formatCompactCurrency(topRep?.gk) },
       { label: 'Deals Converted', value: totalDeals.toLocaleString(), detail: 'Selected period' },
       { label: 'Converted', value: totalDeals.toLocaleString(), detail: 'Completed sales orders' },
@@ -173,11 +189,14 @@ export default function SalesTeamPresentationView({ onExit }) {
           <div className="presentation-ranking-table presentation-ranking-table-wide">
             {teamData.rankings.map(rep => (
               <div className="presentation-ranking-row" key={rep.name}>
-                <span>{rep.rank}</span>
-                <strong>{rep.name}</strong>
-                <em>{rep.sales}</em>
-                <small>{rep.deals} deals converted</small>
-                <small>{rep.gk} GK</small>
+                <div className="ranking-row-left">
+                  <span>{rep.rank}</span>
+                  <strong title={rep.name}>{rep.name}</strong>
+                </div>
+                <div className="ranking-row-right">
+                  <em>{rep.sales}</em>
+                  <small>{rep.deals} client</small>
+                </div>
               </div>
             ))}
           </div>

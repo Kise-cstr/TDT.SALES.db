@@ -7,10 +7,9 @@ export const metricCards = [
   { metric: 'leads', title: 'Total Leads Gathered', value: '1,248', trend: 'up', trendValue: '+12.5%', icon: 'users' },
   { metric: 'deals', title: 'Closed Deals', value: '324', trend: 'down', trendValue: '-3.1%', icon: 'target' },
   { metric: 'conversion', title: 'Target Attainment', value: '25.9%', trend: 'up', trendValue: '+2.4%', icon: 'chart' },
-  { metric: 'active-reps', title: 'Active Sales Reps', value: '18', trend: 'up', trendValue: '+2', icon: 'users' },
+  { metric: 'clients', title: 'Number of Clients', value: '486', trend: 'up', trendValue: '+34', icon: 'users' },
   { metric: 'avg-rep', title: 'Average Sales per Rep', value: 'PHP 117K', trend: 'up', trendValue: '+5.1%', icon: 'dollar' },
   { metric: 'growth', title: 'Monthly Sales Growth %', value: '8.2%', trend: 'up', trendValue: '+1.8%', icon: 'chart' },
-  { metric: 'clients', title: 'Total Clients', value: '486', trend: 'up', trendValue: '+34', icon: 'users' },
   { metric: 'top-rep', title: 'Top Performing Rep', value: baseSalesReps[0]?.name || 'Unassigned', trend: 'up', trendValue: '94%', icon: 'target' }
 ];
 
