@@ -571,14 +571,42 @@
 }
 
 .presentation-dashboard .rankings-list article {
+  display: grid;
+  grid-template-columns: 34px 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
   background: linear-gradient(180deg, rgba(27, 27, 27, 0.98), rgba(18, 18, 18, 0.98)) !important;
   border: 1px solid rgba(255, 140, 0, 0.14) !important;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18) !important;
 }
 
 .presentation-dashboard .rankings-list article > span {
+  flex: 0 0 auto;
   background: rgba(209, 96, 2, 0.18) !important;
   color: var(--present-accent-soft) !important;
+}
+
+.presentation-dashboard .rankings-list article > span:first-child {
+  display: inline-grid;
+  place-items: center;
+}
+
+.presentation-dashboard .rankings-list article > span.ranking-photo {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 159, 67, 0.18);
+}
+
+.presentation-dashboard .rankings-list article > span.ranking-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .presentation-dashboard .rankings-list strong {

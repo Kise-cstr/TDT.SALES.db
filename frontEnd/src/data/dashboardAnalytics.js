@@ -513,6 +513,7 @@ const buildPresentationData = analytics => {
     revenue: formatCompactCurrency(repMetric === 'sales' ? rep.sales : rep.gk),
     rawSales: toNumber(rep.sales),
     rawGk: toNumber(rep.gk),
+    avatar: resolveSalesRepPhoto(rep.fullName || rep.label || rep.name || rep),
     deals: `${toNumber(rep.deals)} client${toNumber(rep.deals) === 1 ? '' : 's'}`
   }));
 

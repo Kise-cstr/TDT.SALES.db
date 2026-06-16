@@ -1462,6 +1462,9 @@ function Rankings({ data, enlarged = false }) {
             }}
           >
             <span>{rep.rank === 1 ? <Trophy size={16} strokeWidth={2.6} /> : rep.rank}</span>
+            <span className="ranking-photo" title={rep.name}>
+              {rep.avatar ? <img src={rep.avatar} alt="" /> : rep.name?.slice(0, 1)}
+            </span>
             <strong>{rep.name}</strong>
             <b>{rep.revenue}</b>
             <small>{rep.deals}</small>
