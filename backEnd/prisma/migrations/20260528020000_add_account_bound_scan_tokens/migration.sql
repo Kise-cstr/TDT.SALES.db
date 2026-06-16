@@ -1,0 +1,19 @@
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "qrCodeToken" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "barcodeToken" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "qrGeneratedAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "barcodeGeneratedAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "tokenVersion" INTEGER NOT NULL DEFAULT 1;
+
+CREATE TABLE IF NOT EXISTS "AuthScanLog" (
+  "id" SERIAL NOT NULL,
+  "userId" INTEGER,
+  "email" TEXT,
+  "tokenHash" TEXT,
+  "scanType" TEXT,
+  "ipAddress" TEXT,
+  "userAgent" TEXT,
+  "success" BOOLEAN NOT NULL DEFAULT false,
+  "reason" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "AuthScanLog_pkey" PRIMARY KEY ("id")
+);

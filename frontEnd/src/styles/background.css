@@ -1,0 +1,65 @@
+.app-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #050505 url('../assets/backgrounds/STEEL.png') center center / cover no-repeat;
+  transform: translateZ(0);
+}
+
+.background-texture {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.86)),
+    radial-gradient(circle at 18% 82%, rgba(196,86,28,0.04), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(196,86,28,0.035), transparent 22%);
+  pointer-events: none;
+}
+
+.background-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.background-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  contain: strict;
+}
+
+.background-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at bottom center, rgba(196,86,28,0.07), transparent 34%),
+    linear-gradient(180deg, transparent 58%, rgba(0,0,0,0.34));
+  opacity: calc(0.18 + (0.7 * var(--dashboard-glow-opacity, 0.68)));
+  pointer-events: none;
+  z-index: 3;
+}
+
+.background-sweep,
+.background-floating-orbs {
+  display: none;
+}
+
+.app-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, transparent 48%, rgba(0,0,0,0.56)),
+    rgba(0,0,0,0.22);
+  pointer-events: none;
+  z-index: 4;
+}

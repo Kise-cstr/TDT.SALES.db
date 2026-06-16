@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  firstName           String
+  lastName            String
+  email               String    @unique
+  password            String
+  role                String    @default("sales")
+  status              String    @default("pending")
+  recoveryPhraseHash  String?
+  passwordFailedAttempts Int   @default(0)
+  recoveryFailedAttempts Int   @default(0)
+  recoveryLockedUntil DateTime?
+  recoveryLastAttemptAt DateTime?
+  qrToken             String?
+  createdAt           DateTime  @default(now())
+  department          String?
+  animationSpeed      String    @default("Balanced")
+  sessionTimeout      Int       @default(15)
+  preferences         Json?
+  notifications       Json?
+  forced              Boolean   @default(false)
+  forcedAt            DateTime?
+  scheduledDeletionAt DateTime?
+  deletionCancelledAt DateTime?
+  qrCodeToken         String?
+  barcodeToken        String?
+  qrGeneratedAt       DateTime?
+  barcodeGeneratedAt  DateTime?
+  tokenVersion        Int       @default(1)
+  position            String?
+  avatar              String?
+  activeSessionId     String?
+  activeSessionAt     DateTime?
+}
+
+model Lead {
+  id            Int      @id @default(autoincrement())
+  customerName  String
+  contactNumber String?
+  email         String?
+  leadSource    String?
+  notes         String?
+  userId        Int
+  createdAt     DateTime @default(now())
+}
+
+model DashboardImportBatch {
+  id             Int                     @id @default(autoincrement())
+  fileName       String?
+  uploadedBy     String?
+  createdAt      DateTime                @default(now())
+  uploaderUserId Int?
+  uploaderEmail  String?
+  uploaderName   String?
+  datasetType    String?
+  signature      String?
+  kpiRecords     UploadedKpiRecord[]
+  productRecords UploadedProductRecord[]
+  salesRecords   UploadedSalesRecord[]
+}
+
+model UploadedSalesRecord {
+  id                Int                  @id @default(autoincrement())
+  batchId           Int
+  date              String?
+  branch            String?
+  repCode           String?
+  repName           String?
+  clientName        String?
+  type              String?
+  terms             String?
+  clientType        String?
+  grossSales        Float                @default(0)
+  finalGk           Float                @default(0)
+  salesmanGk        Float                @default(0)
+  closedDeal        String?
+  leadSource        String?
+  remarks           String?
+  createdAt         DateTime             @default(now())
+  salesmanGkPercent Float                @default(0)
+  fob               Float                @default(0)
+  counter           String?
+  weight            Float                @default(0)
+  batch             DashboardImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model UploadedProductRecord {
+  id            Int                  @id @default(autoincrement())
+  batchId       Int
+  date          String?
+  invoiceNumber String?
+  productCode   String?
+  productName   String?
+  category      String?
+  subCategory   String?
+  quantity      Float                @default(0)
+  unit          String?
+  salesPrice    Float                @default(0)
+  amount        Float                @default(0)
+  balance       Float                @default(0)
+  branch        String?
+  createdAt     DateTime             @default(now())
+  batch         DashboardImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model UploadedKpiRecord {
+  id          Int                  @id @default(autoincrement())
+  batchId     Int
+  branch      String?
+  repCode     String?
+  repName     String?
+  kpiType     String?
+  targetValue Float                @default(0)
+  month       String?
+  year        Int?
+  createdAt   DateTime             @default(now())
+  batch       DashboardImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model SalesOrder {
+  id         Int       @id @default(autoincrement())
+  date       DateTime?
+  class      String?
+  rep        String?
+  num        String?
+  name       String?
+  fob        Float?
+  salesmanGK Float?
+  weight     Float?
+  terms      String?
+  counter    String?
+  source     String?
+  amount     Float?
+  memo       String?
+  createdAt  DateTime  @default(now())
+}
+
+model SalesProduct {
+  id             Int      @id @default(autoincrement())
+  productName    String?
+  category       String?
+  subCategory    String?
+  qty            Float?
+  amount         Float?
+  percentSales   Float?
+  avgPrice       Float?
+  cogs           Float?
+  avgCogs        Float?
+  grossMargin    Float?
+  grossMarginPct Float?
+  weightKgs      Float?
+  tons           Float?
+  createdAt      DateTime @default(now())
+}
+
+model TimelineSalesRecord {
+  id            Int      @id @default(autoincrement())
+  recordDate    DateTime
+  invoiceNumber String?
+  customerName  String?
+  salesmanGk    Float    @default(0)
+  amount        Float    @default(0)
+  sourceFile    String?
+  createdAt     DateTime @default(now())
+
+  @@index([recordDate])
+  @@index([sourceFile])
+}
+
+model AuthScanLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  email     String?
+  tokenHash String?
+  scanType  String?
+  ipAddress String?
+  userAgent String?
+  success   Boolean  @default(false)
+  reason    String?
+  createdAt DateTime @default(now())
+}

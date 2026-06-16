@@ -1,0 +1,115 @@
+.workforce-status-badge {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.055);
+  color: rgba(255,255,255,0.76);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: capitalize;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-badge-approval {
+  min-height: 24px;
+  padding: 0 9px;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.66);
+  background: rgba(255,255,255,0.045);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+}
+
+.workforce-status-badge-performance {
+  letter-spacing: 0.02em;
+}
+
+.workforce-status-badge svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.workforce-status-approved,
+.workforce-status-active {
+  color: #ffd0a1;
+  border-color: rgba(249,115,22,0.34);
+  background: rgba(249,115,22,0.12);
+  box-shadow: 0 0 14px rgba(249,115,22,0.12), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-pending,
+.workforce-status-pending_deletion {
+  color: #ffd28a;
+  border-color: rgba(255,122,0,0.34);
+  background: rgba(255,122,0,0.12);
+  box-shadow: 0 0 14px rgba(255,122,0,0.12), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-rejected {
+  color: #ffb4a8;
+  border-color: rgba(255,77,77,0.34);
+  background: rgba(255,77,77,0.12);
+  box-shadow: 0 0 14px rgba(255,77,77,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-inactive {
+  color: rgba(255,255,255,0.62);
+  border-color: rgba(148,163,184,0.26);
+  background: rgba(148,163,184,0.1);
+}
+
+.workforce-status-excellent {
+  color: #ffd0a1;
+  border-color: rgba(249,115,22,0.38);
+  background: rgba(249,115,22,0.12);
+  box-shadow: 0 0 16px rgba(249,115,22,0.14), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-good {
+  color: #f8bd6b;
+  border-color: rgba(248,189,107,0.38);
+  background: rgba(248,189,107,0.10);
+  box-shadow: 0 0 16px rgba(248,189,107,0.12), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-average {
+  color: #ffd28a;
+  border-color: rgba(255,178,70,0.4);
+  background: rgba(255,148,30,0.12);
+  box-shadow: 0 0 16px rgba(255,122,0,0.14), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-low {
+  color: #ffb4a8;
+  border-color: rgba(255,77,77,0.38);
+  background: rgba(255,77,77,0.12);
+  box-shadow: 0 0 16px rgba(255,77,77,0.13), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-positive {
+  color: #ffd0a1;
+  border-color: rgba(249,115,22,0.38);
+  background: rgba(249,115,22,0.12);
+  box-shadow: 0 0 16px rgba(249,115,22,0.14), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-neutral {
+  color: #ffd28a;
+  border-color: rgba(255,178,70,0.4);
+  background: rgba(255,148,30,0.12);
+  box-shadow: 0 0 16px rgba(255,122,0,0.14), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.workforce-status-negative {
+  color: #ffb4a8;
+  border-color: rgba(255,77,77,0.38);
+  background: rgba(255,77,77,0.12);
+  box-shadow: 0 0 16px rgba(255,77,77,0.13), inset 0 1px 0 rgba(255,255,255,0.04);
+}

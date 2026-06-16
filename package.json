@@ -1,0 +1,36 @@
+{
+  "scripts": {
+    "dev": "npm --prefix backEnd run dev",
+    "install:backend": "npm --prefix backEnd install",
+    "install:frontend": "npm --prefix frontEnd install",
+    "prisma:generate": "npm --prefix backEnd run prisma:generate",
+    "prisma:migrate:deploy": "npm --prefix backEnd run prisma:migrate:deploy",
+    "prisma:studio": "prisma studio --schema backEnd/prisma/schema.prisma",
+    "build:frontend": "npm --prefix frontEnd run build",
+    "deploy:prepare": "npm run install:backend && npm run prisma:migrate:deploy && npm run prisma:generate && npm run install:frontend && npm run build:frontend",
+    "deploy:backend": "pm2 startOrReload ecosystem.config.cjs --env production",
+    "deploy:save": "pm2 save",
+    "deploy:all": "npm run deploy:prepare && npm run deploy:backend && npm run deploy:save"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.8.0",
+    "@tanstack/react-table": "^8.21.3",
+    "cors": "^2.8.6",
+    "csv-parser": "^3.2.1",
+    "dayjs": "^1.11.21",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "framer-motion": "^12.40.0",
+    "googleapis": "^171.4.0",
+    "lodash": "^4.18.1",
+    "multer": "^2.1.1",
+    "papaparse": "^5.5.3",
+    "prisma": "^7.8.0",
+    "react-icons": "^5.6.0",
+    "recharts": "^3.8.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

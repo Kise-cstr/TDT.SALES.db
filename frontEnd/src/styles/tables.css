@@ -1,0 +1,98 @@
+.table-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.table-title {
+  color: #ff8a1f;
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.rep-table {
+  width: 100%;
+  min-width: 35rem;
+  border-collapse: collapse;
+}
+
+.rep-table-scroll {
+  max-height: clamp(14rem, 28vh, 18rem);
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+}
+
+.rep-table th,
+.rep-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  text-align: left;
+  font-size: 13px;
+}
+
+.rep-table th {
+  color: rgba(255,255,255,0.58);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.rep-table td {
+  color: rgba(255,255,255,0.84);
+}
+
+.rep-auto-scroll {
+  animation: repAutoScroll 23s linear infinite;
+  will-change: transform;
+}
+
+.rep-table-scroll:hover .rep-auto-scroll {
+  animation-play-state: paused;
+}
+
+@keyframes repAutoScroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+.rep-identity-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rep-avatar {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,122,0,0.28);
+  border-radius: 50%;
+  overflow: hidden;
+  color: #ffb56d;
+  background: rgba(255,122,0,0.12);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.rep-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rep-identity-cell strong,
+.rep-identity-cell small {
+  display: block;
+}
+
+.rep-identity-cell small {
+  margin-top: 3px;
+  color: rgba(255,255,255,0.48);
+}

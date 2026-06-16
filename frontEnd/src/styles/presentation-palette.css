@@ -1,0 +1,1543 @@
+:root {
+  --present-bg: #0b0b0b;
+  --present-bg-soft: #0d0d0d;
+  --present-panel: #1d1d1d;
+  --present-panel-soft: #202020;
+  --present-panel-deep: #111111;
+  --present-row: #171717;
+  --present-accent: #D16002;
+  --present-accent-deep: #CC5500;
+  --present-accent-soft: #ff9f43;
+  --present-accent-warm: #f8bd6b;
+  --present-muted: #a1a1aa;
+  --present-muted-2: #8f8f8f;
+  --present-text: #f5f5f5;
+  --present-text-soft: #d6dce2;
+  --present-line: rgba(95, 95, 95, 0.34);
+  --present-border: rgba(209, 96, 2, 0.28);
+  --present-border-strong: rgba(209, 96, 2, 0.52);
+  --present-glow: rgba(209, 96, 2, 0.12);
+}
+
+.dashboard-page.presentation-mode,
+.presentation-shell,
+.presentation-dashboard.dashboard-content,
+.enterprise-present-shell {
+  color: var(--present-text);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(209, 96, 2, 0.055), transparent 34%),
+    radial-gradient(circle at 88% 100%, rgba(204, 85, 0, 0.04), transparent 30%),
+    linear-gradient(180deg, var(--present-bg) 0%, var(--present-bg-soft) 48%, var(--present-bg) 100%) !important;
+}
+
+.presentation-dashboard.dashboard-content {
+  width: min(100%, 1920px) !important;
+  max-width: 1920px !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+  box-sizing: border-box !important;
+}
+
+.presentation-header,
+.presentation-dashboard .present-header,
+.enterprise-present-header,
+.presentation-panel,
+.presentation-dashboard .dashboard-card,
+.presentation-dashboard .stat-card,
+.presentation-metric-card,
+.enterprise-card,
+.analytics-card,
+.enterprise-present-card,
+.enterprise-present-panel {
+  border-color: var(--present-border) !important;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(209, 96, 2, 0.09), transparent 28%),
+    linear-gradient(180deg, rgba(32, 32, 32, 0.96), rgba(17, 17, 17, 0.98)),
+    var(--present-panel) !important;
+  box-shadow: 0 0 18px var(--present-glow), inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.presentation-panel-live {
+  border-color: var(--present-border-strong) !important;
+  box-shadow: inset 0 2px 0 var(--present-accent), 0 0 18px var(--present-glow) !important;
+}
+
+.presentation-brand h1,
+.presentation-live-dot,
+.presentation-metric-card strong,
+.presentation-product-total strong,
+.presentation-ranking-row em,
+.presentation-ranking-row span,
+.presentation-dashboard .presentation-header-control span,
+.presentation-dashboard .presentation-live-clock strong,
+.presentation-dashboard .stat-card strong,
+.presentation-dashboard .donut-container strong,
+.presentation-dashboard .rankings-list b,
+.enterprise-present-header-left h1,
+.enterprise-present-exit,
+.enterprise-present-filters span,
+.enterprise-present-mode strong,
+.enterprise-present-card strong,
+.enterprise-present-stat strong,
+.analytics-page-title h1,
+.analytics-filter-row span,
+.analytics-tooltip strong {
+  color: var(--present-accent-soft) !important;
+}
+
+.presentation-company,
+.presentation-live small,
+.presentation-date-range,
+.presentation-panel-header p,
+.presentation-metric-card small,
+.presentation-source-row span,
+.presentation-product-total span,
+.presentation-product-total small,
+.presentation-product-item small,
+.presentation-terms-item small,
+.presentation-ranking-row small,
+.presentation-dashboard .dashboard-card-header p,
+.presentation-dashboard .stat-card span,
+.presentation-dashboard .stat-card small,
+.presentation-dashboard .company-list span,
+.presentation-dashboard .product-list span,
+.enterprise-present-eyebrow,
+.enterprise-present-clock,
+.enterprise-present-filters span,
+.enterprise-present-card small,
+.enterprise-present-card span {
+  color: var(--present-muted) !important;
+}
+
+.presentation-panel-header h2,
+.presentation-source-row strong,
+.presentation-product-item strong,
+.presentation-terms-item strong,
+.presentation-ranking-row strong,
+.presentation-dashboard .dashboard-card-header h2,
+.presentation-dashboard .company-list strong,
+.presentation-dashboard .product-list strong,
+.presentation-dashboard .product-list b,
+.presentation-dashboard .terms-funnel span,
+.presentation-dashboard .terms-funnel strong,
+.presentation-dashboard .counter-funnel span,
+.presentation-dashboard .counter-funnel strong,
+.presentation-dashboard .counter-funnel small,
+.enterprise-present-header-left h1,
+.enterprise-present-panel h2,
+.analytics-card h2 {
+  color: var(--present-text) !important;
+}
+
+.presentation-metric-card::before,
+.enterprise-card::before,
+.enterprise-table-card::before,
+.enterprise-filters::before,
+.presentation-dashboard .dashboard-card::before,
+.presentation-dashboard .stat-card::before {
+  background: linear-gradient(90deg, transparent, var(--present-accent), transparent) !important;
+  box-shadow: 0 0 14px rgba(209, 96, 2, 0.42) !important;
+}
+
+.presentation-source-row,
+.presentation-ranking-row,
+.presentation-dashboard .company-list article,
+.presentation-dashboard .rankings-list article,
+.analytics-table-scroll thead,
+.enterprise-table th {
+  background: var(--present-row) !important;
+}
+
+.presentation-source-meter,
+.presentation-dashboard .company-list i,
+.presentation-dashboard .terms-funnel > i,
+.presentation-dashboard .counter-funnel > i,
+.presentation-dashboard .rankings-list article > span,
+.presentation-product-total,
+.presentation-dashboard .donut-container > div:last-child {
+  background-color: var(--present-panel-deep) !important;
+}
+
+.presentation-dashboard .donut-container > .donut-center-label {
+  width: var(--donut-center-size) !important;
+  height: var(--donut-center-size) !important;
+  max-width: var(--donut-center-size);
+  max-height: var(--donut-center-size);
+  overflow: hidden;
+  padding: 4px;
+}
+
+.presentation-dashboard .donut-container > .donut-center-label strong {
+  max-width: 100%;
+  font-size: clamp(13px, calc(var(--donut-center-size) * 0.23), 20px) !important;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.presentation-dashboard .donut-container > .donut-center-label span,
+.presentation-dashboard .donut-container > .donut-center-label small {
+  max-width: 100%;
+  font-size: clamp(6px, calc(var(--donut-center-size) * 0.115), 11px) !important;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.presentation-dashboard .rankings-list article > span,
+.presentation-ranking-row span {
+  background: rgba(209, 96, 2, 0.18) !important;
+  color: var(--present-accent-soft) !important;
+}
+
+.presentation-exit-btn,
+.presentation-dashboard .presentation-close-button,
+.enterprise-present-exit,
+.enterprise-present-filterbar button,
+.analytics-filter-row button {
+  border-color: var(--present-border-strong) !important;
+  color: var(--present-text) !important;
+  background: rgba(209, 96, 2, 0.12) !important;
+}
+
+.presentation-exit-btn:hover,
+.presentation-dashboard .presentation-close-button:hover,
+.enterprise-present-exit:hover,
+.enterprise-present-filterbar button:hover,
+.analytics-filter-row button:hover {
+  border-color: rgba(255, 159, 67, 0.72) !important;
+  background: rgba(209, 96, 2, 0.2) !important;
+  box-shadow: 0 0 20px rgba(209, 96, 2, 0.18) !important;
+}
+
+.presentation-dashboard .presentation-header-control select,
+.enterprise-present-filters select,
+.enterprise-present-filterbar select,
+.analytics-filter-row select,
+.analytics-filter-row button {
+  border-color: var(--present-border) !important;
+  color: var(--present-text) !important;
+  background: rgba(18, 18, 18, 0.92) !important;
+}
+
+.presentation-dashboard .presentation-actions .presentation-header-control {
+  width: clamp(102px, 7vw, 132px);
+}
+
+.presentation-dashboard .presentation-header-control.is-disabled span {
+  color: rgba(174, 180, 186, 0.62) !important;
+}
+
+.presentation-dashboard .presentation-header-control select:disabled {
+  border-color: rgba(174, 180, 186, 0.18) !important;
+  color: rgba(174, 180, 186, 0.48) !important;
+  background: rgba(30, 30, 30, 0.58) !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.presentation-tooltip,
+.analytics-tooltip,
+.enterprise-tooltip,
+.enterprise-chart-tooltip {
+  border-color: var(--present-border) !important;
+  background: var(--present-panel-deep) !important;
+  color: var(--present-text) !important;
+}
+
+.presentation-dashboard .sales-card .recharts-cartesian-grid line,
+.presentation-chart-fill .recharts-cartesian-grid line,
+.analytics-card .recharts-cartesian-grid line,
+.enterprise-card .recharts-cartesian-grid line {
+  stroke: var(--present-line) !important;
+}
+
+.presentation-dashboard .sales-card .recharts-cartesian-axis-tick text,
+.presentation-chart-fill .recharts-cartesian-axis-tick text,
+.analytics-card .recharts-cartesian-axis-tick text,
+.enterprise-card .recharts-cartesian-axis-tick text {
+  fill: var(--present-muted) !important;
+}
+
+.presentation-dashboard .terms-funnel article,
+.presentation-dashboard .counter-funnel article,
+.presentation-terms-pyramid-row {
+  background: linear-gradient(90deg, var(--term-color, var(--counter-color, var(--present-accent))), color-mix(in srgb, var(--term-color, var(--counter-color, var(--present-accent))) 56%, #111 44%)) !important;
+}
+
+.presentation-dashboard .counter-funnel .counter-funnel-layer {
+  background: transparent !important;
+}
+
+.presentation-dashboard .counter-funnel .counter-funnel-layer::before {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--counter-color) 88%, #ffffff 12%),
+      var(--counter-color) 52%,
+      color-mix(in srgb, var(--counter-color) 68%, #17110d 32%)
+    ) !important;
+}
+
+.presentation-product-item > span,
+.presentation-terms-item > span,
+.product-tons-row i,
+.terms-share-dot {
+  box-shadow: 0 0 10px rgba(209, 96, 2, 0.16) !important;
+}
+
+body.presentation-focus-open {
+  overflow: hidden;
+}
+
+.presentation-dashboard .presentation-focus-shell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  cursor: zoom-in;
+}
+
+.presentation-dashboard .presentation-focus-shell > .dashboard-card,
+.presentation-dashboard .presentation-focus-shell > .stat-card {
+  height: 100%;
+}
+
+.presentation-dashboard .presentation-focus-shell:hover .presentation-enlarge-btn,
+.presentation-dashboard .presentation-focus-shell:focus-within .presentation-enlarge-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.presentation-dashboard .presentation-enlarge-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 12;
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgba(255, 159, 67, 0.55);
+  border-radius: 8px;
+  color: var(--present-accent-soft);
+  background: rgba(17, 17, 17, 0.72);
+  box-shadow: 0 0 16px rgba(209, 96, 2, 0.18);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 160ms ease, transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.presentation-dashboard .presentation-enlarge-btn:hover {
+  border-color: rgba(255, 159, 67, 0.9);
+  background: rgba(209, 96, 2, 0.2);
+}
+
+.presentation-dashboard .dashboard-card,
+.presentation-dashboard .stat-card,
+.presentation-dashboard .chart-container,
+.presentation-dashboard .products-layout,
+.presentation-dashboard .company-list,
+.presentation-dashboard .counter-bar-chart,
+.presentation-dashboard .rankings-list {
+  position: relative;
+}
+
+.presentation-smart-tooltip {
+  position: absolute;
+  z-index: 30;
+  display: grid;
+  min-width: 176px;
+  max-width: 248px;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 159, 67, 0.58);
+  border-radius: 10px;
+  color: var(--present-text);
+  background:
+    linear-gradient(180deg, rgba(29, 29, 29, 0.94), rgba(10, 10, 10, 0.94));
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42), 0 0 20px rgba(209, 96, 2, 0.22);
+  pointer-events: none;
+  backdrop-filter: blur(14px);
+}
+
+.presentation-smart-tooltip strong {
+  color: var(--present-accent-soft);
+  font-size: 0.84rem;
+  line-height: 1.15;
+}
+
+.presentation-smart-tooltip span {
+  color: var(--present-text-soft);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.presentation-dashboard .presentation-point-muted,
+.presentation-dashboard .product-donut-segment.is-muted,
+.presentation-dashboard .product-list article.is-muted,
+.presentation-dashboard .product-pie-list article.is-muted,
+.presentation-dashboard .company-list article.is-muted,
+.presentation-dashboard .counter-bar-row.is-muted,
+.presentation-dashboard .rankings-list article.is-muted {
+  opacity: 0.35;
+  transition: opacity 160ms ease;
+}
+
+.presentation-dashboard .product-donut-segment,
+.presentation-dashboard .product-list article,
+.presentation-dashboard .product-pie-list article,
+.presentation-dashboard .company-list article,
+.presentation-dashboard .counter-bar-row,
+.presentation-dashboard .rankings-list article {
+  transition: opacity 160ms ease, transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.presentation-dashboard .product-list article.is-active,
+.presentation-dashboard .product-pie-list article.is-active,
+.presentation-dashboard .company-list article.is-active,
+.presentation-dashboard .counter-bar-row.is-active,
+.presentation-dashboard .rankings-list article.is-active {
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px rgba(209, 96, 2, 0.18);
+}
+
+[data-theme="dark"] .presentation-dashboard .counter-bar-meta strong,
+[data-theme="dark"] .presentation-dashboard .rankings-list article strong {
+  color: rgba(255, 255, 255, 0.92) !important;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.42);
+}
+
+[data-theme="dark"] .presentation-dashboard .counter-bar-meta b,
+[data-theme="dark"] .presentation-dashboard .counter-bar-meta span,
+[data-theme="dark"] .presentation-dashboard .rankings-list article small {
+  color: rgba(229, 231, 235, 0.78) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .rankings-list article b {
+  color: #ffb35f !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .counter-bar-row.is-muted,
+[data-theme="dark"] .presentation-dashboard .rankings-list article.is-muted {
+  opacity: 0.72;
+}
+
+[data-theme="dark"] .presentation-dashboard .counter-bar-row.is-muted .counter-bar-meta strong,
+[data-theme="dark"] .presentation-dashboard .rankings-list article.is-muted strong {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+[data-theme="dark"] .presentation-dashboard .counter-bar-row.is-muted .counter-bar-meta b,
+[data-theme="dark"] .presentation-dashboard .counter-bar-row.is-muted .counter-bar-meta span,
+[data-theme="dark"] .presentation-dashboard .rankings-list article.is-muted b,
+[data-theme="dark"] .presentation-dashboard .rankings-list article.is-muted small {
+  color: rgba(229, 231, 235, 0.7) !important;
+}
+
+.presentation-dashboard .rankings-list article[data-rank="1"] {
+  border: 1px solid rgba(255, 198, 74, 0.58);
+  background:
+    linear-gradient(90deg, rgba(255, 198, 74, 0.13), rgba(23, 23, 23, 0.98) 42%),
+    var(--present-row) !important;
+  box-shadow: 0 0 22px rgba(255, 198, 74, 0.2);
+}
+
+.presentation-dashboard .rankings-list article[data-rank="2"] {
+  border: 1px solid rgba(210, 218, 226, 0.42);
+  background:
+    linear-gradient(90deg, rgba(210, 218, 226, 0.11), rgba(23, 23, 23, 0.98) 42%),
+    var(--present-row) !important;
+  box-shadow: 0 0 16px rgba(210, 218, 226, 0.13);
+}
+
+.presentation-dashboard .rankings-list article[data-rank="3"] {
+  border: 1px solid rgba(205, 127, 50, 0.48);
+  background:
+    linear-gradient(90deg, rgba(205, 127, 50, 0.12), rgba(23, 23, 23, 0.98) 42%),
+    var(--present-row) !important;
+  box-shadow: 0 0 16px rgba(205, 127, 50, 0.14);
+}
+
+.presentation-dashboard .rankings-list article[data-rank="1"] > span {
+  color: #ffe39a !important;
+  background: rgba(255, 198, 74, 0.2) !important;
+  box-shadow: 0 0 18px rgba(255, 198, 74, 0.34);
+}
+
+.presentation-dashboard .rankings-list article[data-rank="2"] > span {
+  color: #e5e7eb !important;
+  background: rgba(210, 218, 226, 0.16) !important;
+  box-shadow: 0 0 14px rgba(210, 218, 226, 0.22);
+}
+
+.presentation-dashboard .rankings-list article[data-rank="3"] > span {
+  color: #f0ad68 !important;
+  background: rgba(205, 127, 50, 0.18) !important;
+  box-shadow: 0 0 14px rgba(205, 127, 50, 0.22);
+}
+
+.presentation-dashboard .rankings-list article[data-rank="1"] b,
+.presentation-dashboard .rankings-list article[data-rank="1"] strong {
+  color: #ffe39a !important;
+}
+
+.presentation-dashboard .rankings-list article[data-rank="2"] b {
+  color: #e5e7eb !important;
+}
+
+.presentation-dashboard .rankings-list article[data-rank="3"] b {
+  color: #f0ad68 !important;
+}
+
+.presentation-dashboard .products-card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
+.presentation-dashboard .products-card-action p {
+  margin: 0;
+  color: var(--present-muted);
+  white-space: nowrap;
+}
+
+.presentation-dashboard .product-mode-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 96px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 159, 67, 0.6);
+  border-radius: 999px;
+  color: var(--present-text);
+  background: rgba(12, 12, 12, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(255, 159, 67, 0.06), 0 0 14px rgba(209, 96, 2, 0.12);
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.presentation-dashboard .product-mode-switch::before {
+  content: '';
+  position: absolute;
+  inset: 3px auto 3px 3px;
+  width: 26px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--present-accent-soft), var(--present-accent));
+  box-shadow: 0 0 12px rgba(255, 159, 67, 0.38);
+  transition: transform 180ms ease;
+}
+
+.presentation-dashboard .product-mode-switch.is-tons::before {
+  transform: translateX(61px);
+}
+
+.presentation-dashboard .product-mode-switch span {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  color: var(--present-text);
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-align: right;
+  transition: text-align 180ms ease;
+}
+
+.presentation-dashboard .product-mode-switch.is-tons span {
+  text-align: left;
+}
+
+.presentation-dashboard .product-mode-switch:hover {
+  border-color: rgba(255, 159, 67, 0.92);
+  background: rgba(209, 96, 2, 0.12);
+  box-shadow: 0 0 20px rgba(209, 96, 2, 0.2);
+}
+
+.presentation-dashboard .product-list {
+  scroll-behavior: smooth;
+}
+
+.presentation-dashboard .product-list article {
+  display: grid;
+  grid-template-columns: 16px minmax(150px, 1fr) minmax(54px, 72px) minmax(92px, 136px) !important;
+  align-items: center;
+  min-width: 0;
+}
+
+.presentation-dashboard .product-list .product-list-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  color: var(--present-text) !important;
+  font-size: clamp(12px, 0.84vw, 15px) !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.presentation-dashboard .product-list .product-list-share,
+.presentation-dashboard .product-list .product-list-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.presentation-dashboard .product-list .product-list-share {
+  color: var(--present-text) !important;
+  font-size: clamp(12px, 0.84vw, 15px) !important;
+  font-weight: 950 !important;
+}
+
+.presentation-dashboard .product-list .product-list-value {
+  color: var(--present-muted) !important;
+  font-size: clamp(10px, 0.72vw, 13px) !important;
+  font-weight: 800;
+}
+
+.presentation-dashboard .product-list .product-list-empty {
+  grid-template-columns: 1fr !important;
+  justify-items: start;
+  color: var(--present-muted);
+}
+
+.presentation-dashboard .product-pie-list {
+  height: 100%;
+  max-height: 100%;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: clamp(8px, 1vh, 13px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 8px 2px 0;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 140, 0, 0.42) rgba(255,255,255,0.05);
+}
+
+.presentation-dashboard .product-pie-list article {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) minmax(52px, 74px) minmax(92px, 140px);
+  align-items: center;
+  min-height: clamp(34px, 4.4vh, 46px);
+  min-width: 0;
+  gap: clamp(8px, 0.8vw, 14px);
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 180ms ease, transform 180ms ease, background-color 180ms ease, filter 180ms ease;
+}
+
+.presentation-dashboard .product-pie-list i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.18);
+}
+
+.presentation-dashboard .product-pie-list strong,
+.presentation-dashboard .product-pie-list b,
+.presentation-dashboard .product-pie-list span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+
+.presentation-dashboard .product-pie-list strong {
+  color: var(--present-text) !important;
+  font-size: clamp(12px, 0.84vw, 15px);
+  font-weight: 950;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.presentation-dashboard .product-pie-list b {
+  color: var(--present-text) !important;
+  font-size: clamp(12px, 0.84vw, 15px);
+  font-weight: 950;
+  text-align: right;
+}
+
+.presentation-dashboard .product-pie-list span {
+  color: var(--present-muted) !important;
+  font-size: clamp(10px, 0.72vw, 13px);
+  font-weight: 800;
+  text-align: right;
+}
+
+.presentation-dashboard .product-pie-list article.is-active {
+  background: rgba(255, 140, 0, 0.08);
+  filter: drop-shadow(0 0 10px rgba(255, 140, 0, 0.18));
+  opacity: 1;
+  transform: translateX(2px) scale(1.01);
+}
+
+.presentation-dashboard .product-pie-list article.is-active i {
+  box-shadow: 0 0 16px rgba(255, 159, 67, 0.58);
+}
+
+.presentation-dashboard .product-pie-list article.is-muted {
+  opacity: 0.34;
+}
+
+.presentation-dashboard .product-pie-list article.is-muted i {
+  background: #666 !important;
+  box-shadow: none;
+}
+
+.presentation-dashboard .product-pie-list-empty {
+  grid-template-columns: 1fr !important;
+  justify-items: start;
+  color: var(--present-muted);
+}
+
+.presentation-dashboard .products-card .donut-container {
+  width: clamp(220px, 16vw, 320px);
+  height: clamp(220px, 16vw, 320px);
+  min-width: 220px;
+  min-height: 220px;
+}
+
+.presentation-dashboard .products-card .products-donut-svg {
+  min-width: 220px;
+  min-height: 220px;
+}
+
+.presentation-analytics-products .presentation-chart-fill {
+  min-width: 320px;
+  min-height: 420px;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.presentation-analytics-products .products-donut-placeholder {
+  width: min(72%, 320px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #111214 0 42%, transparent 43%),
+    conic-gradient(from 0deg, rgba(255, 140, 26, 0.36), rgba(255, 159, 67, 0.16), rgba(95, 95, 95, 0.22), rgba(255, 140, 26, 0.36));
+  opacity: 0.72;
+}
+
+.presentation-focus-modal-body .products-card .donut-container {
+  min-width: clamp(280px, 24vw, 520px);
+  min-height: clamp(280px, 24vw, 520px);
+}
+
+.presentation-dashboard .counter-bar-row.is-active .counter-bar-track i {
+  box-shadow: 0 0 14px rgba(255, 159, 67, 0.45);
+}
+
+.presentation-focus-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 2vw, 28px);
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(16px);
+}
+
+.presentation-focus-modal {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(85vw, 1600px);
+  height: min(80vh, 940px);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 159, 67, 0.5);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(209, 96, 2, 0.13), transparent 34%),
+    linear-gradient(180deg, rgba(27, 27, 27, 0.98), rgba(8, 8, 8, 0.98));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62), 0 0 34px rgba(209, 96, 2, 0.26);
+}
+
+.presentation-focus-modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 58px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(209, 96, 2, 0.24);
+}
+
+.presentation-focus-modal > header strong {
+  color: var(--present-accent-soft);
+  font-size: clamp(1.05rem, 1.4vw, 1.45rem);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.presentation-focus-modal > header button {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(255, 159, 67, 0.55);
+  border-radius: 10px;
+  color: var(--present-text);
+  background: rgba(209, 96, 2, 0.12);
+  cursor: pointer;
+}
+
+.presentation-focus-modal-body {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(14px, 1.5vw, 22px);
+}
+
+.presentation-focus-modal-body .dashboard-card,
+.presentation-focus-modal-body .stat-card {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.presentation-focus-modal-body .stat-card {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+}
+
+.presentation-focus-modal-body .stat-card span {
+  font-size: clamp(1rem, 1.5vw, 1.45rem);
+}
+
+.presentation-focus-modal-body .stat-card strong {
+  font-size: clamp(2.8rem, 6vw, 6.5rem);
+  line-height: 0.95;
+}
+
+.presentation-focus-modal-body .stat-card small {
+  font-size: clamp(0.95rem, 1.4vw, 1.25rem);
+}
+
+.presentation-focus-modal-body .chart-container {
+  min-height: 0;
+  height: calc(100% - 62px);
+}
+
+.presentation-focus-modal-body .company-list,
+.presentation-focus-modal-body .rankings-list,
+.presentation-focus-modal-body .counter-bar-chart {
+  height: calc(100% - 58px);
+}
+
+.presentation-focus-modal-body .sales-comparison-svg,
+.presentation-focus-modal-body .products-donut-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.presentation-focus-modal-body .products-layout {
+  height: calc(100% - 58px);
+  align-items: center;
+  overflow: hidden;
+}
+
+.presentation-focus-modal-body .product-list,
+.presentation-focus-modal-body .product-pie-list,
+.presentation-focus-modal-body .company-list,
+.presentation-focus-modal-body .rankings-list {
+  max-height: 100%;
+  overflow: auto;
+}
+
+.presentation-focus-modal-body .counter-bar-chart {
+  height: calc(100% - 58px);
+  justify-content: center;
+  overflow: hidden;
+}
+
+.presentation-dashboard .dashboard-card.is-enlarged .dashboard-card-header h2 {
+  font-size: clamp(1.7rem, 2vw, 2.4rem);
+}
+
+.presentation-dashboard .dashboard-card.is-enlarged .dashboard-card-header p,
+.presentation-dashboard .dashboard-card.is-enlarged .sales-comparison-legend-item b {
+  font-size: clamp(0.9rem, 1vw, 1.05rem);
+}
+
+.presentation-dashboard .products-card.is-enlarged .product-list article,
+.presentation-dashboard .companies-card.is-enlarged .company-list article,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article {
+  min-height: 64px;
+}
+
+.presentation-dashboard .counter-card.is-enlarged .counter-bar-row {
+  min-height: 82px;
+}
+
+/* Compact leaderboard rendering for the enlarged presentation modal and sales-team rankings. */
+.presentation-focus-modal-body .rankings-list,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list {
+  align-content: start;
+  gap: 10px !important;
+}
+
+.presentation-focus-modal-body .rankings-list article,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article,
+.presentation-ranking-row {
+  min-height: 58px !important;
+  padding: 10px 14px !important;
+  border-radius: 16px !important;
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto !important;
+  gap: 12px !important;
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 241, 236, 0.96)) !important;
+  border: 1px solid rgba(230, 112, 38, 0.14) !important;
+  box-shadow: 0 6px 16px rgba(36, 36, 35, 0.06) !important;
+}
+
+.presentation-focus-modal-body .rankings-list article > span,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article > span,
+.presentation-ranking-row > span {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(230, 112, 38, 0.14);
+  color: #e87026 !important;
+  font-size: 16px;
+  font-weight: 950;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.presentation-focus-modal-body .rankings-list article strong,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article strong,
+.presentation-ranking-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  color: #242423 !important;
+}
+
+.presentation-focus-modal-body .rankings-list article b,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article b,
+.presentation-ranking-row em {
+  white-space: nowrap;
+  font-size: 16px !important;
+  font-style: normal;
+  font-weight: 950 !important;
+  color: #E67026 !important;
+  text-align: right;
+}
+
+.presentation-focus-modal-body .rankings-list article small,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article small,
+.presentation-ranking-row small {
+  white-space: nowrap;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  color: rgba(95, 92, 87, 0.84) !important;
+  text-align: right;
+}
+
+.presentation-ranking-row small:last-child {
+  display: none;
+}
+
+.presentation-focus-modal-body .rankings-list article[data-rank="1"],
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="1"],
+.presentation-ranking-row[data-rank="1"] {
+  border-color: rgba(242, 190, 119, 0.42) !important;
+}
+
+.presentation-focus-modal-body .rankings-list article[data-rank="2"],
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="2"],
+.presentation-ranking-row[data-rank="2"] {
+  border-color: rgba(214, 195, 173, 0.34) !important;
+}
+
+.presentation-focus-modal-body .rankings-list article[data-rank="3"],
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="3"],
+.presentation-ranking-row[data-rank="3"] {
+  border-color: rgba(241, 167, 85, 0.36) !important;
+}
+
+.presentation-focus-modal-body .rankings-list article[data-rank="1"] > span,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="1"] > span,
+.presentation-ranking-row[data-rank="1"] > span {
+  color: #c66a18 !important;
+  background: rgba(255, 236, 215, 0.98) !important;
+}
+
+.presentation-focus-modal-body .rankings-list article[data-rank="2"] > span,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="2"] > span,
+.presentation-ranking-row[data-rank="2"] > span {
+  color: rgba(120, 88, 48, 0.88) !important;
+  background: rgba(255, 247, 236, 0.98) !important;
+}
+
+.presentation-focus-modal-body .rankings-list article[data-rank="3"] > span,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article[data-rank="3"] > span,
+.presentation-ranking-row[data-rank="3"] > span {
+  color: #ef8c2f !important;
+  background: rgba(255, 241, 227, 0.98) !important;
+}
+
+.presentation-focus-modal-body .rankings-list article b,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article b {
+  text-align: right;
+}
+
+.presentation-focus-modal-body .rankings-list article small,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article small {
+  text-align: right;
+}
+
+/* Keep the modal compact even when the card is enlarged. */
+.presentation-focus-modal-body .rankings-list article,
+.presentation-dashboard .rankings-card.is-enlarged .rankings-list article {
+  min-height: 58px !important;
+}
+
+[data-theme="dark"] .presentation-focus-modal-body .rankings-list article,
+[data-theme="dark"] .presentation-dashboard .rankings-card.is-enlarged .rankings-list article,
+[data-theme="dark"] .presentation-ranking-row {
+  background:
+    linear-gradient(90deg, rgba(209, 96, 2, 0.08), rgba(23, 23, 23, 0.96)) !important;
+  border-color: rgba(255, 159, 67, 0.18) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22) !important;
+}
+
+[data-theme="dark"] .presentation-focus-modal-body .rankings-list article strong,
+[data-theme="dark"] .presentation-dashboard .rankings-card.is-enlarged .rankings-list article strong,
+[data-theme="dark"] .presentation-ranking-row strong {
+  color: #f5f5f5 !important;
+}
+
+[data-theme="dark"] .presentation-focus-modal-body .rankings-list article small,
+[data-theme="dark"] .presentation-dashboard .rankings-card.is-enlarged .rankings-list article small,
+[data-theme="dark"] .presentation-ranking-row small {
+  color: rgba(229, 231, 235, 0.78) !important;
+}
+
+[data-theme="dark"] .presentation-focus-modal-body .rankings-list article b,
+[data-theme="dark"] .presentation-dashboard .rankings-card.is-enlarged .rankings-list article b,
+[data-theme="dark"] .presentation-ranking-row em {
+  color: #ff9f43 !important;
+}
+
+@media (max-width: 900px) {
+  .presentation-focus-backdrop {
+    padding: 0;
+  }
+
+  .presentation-focus-modal {
+    width: 100dvw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .presentation-focus-modal-body {
+    padding: 12px;
+  }
+
+  .presentation-focus-modal-body .products-layout {
+    grid-template-columns: 1fr;
+    align-content: start;
+    overflow: auto;
+  }
+}
+
+.presentation-dashboard .products-card .products-layout {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.presentation-dashboard .products-card .donut-container {
+  position: relative;
+  top: auto;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  padding: clamp(10px, 1vw, 18px);
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.presentation-dashboard .products-card .products-donut-svg {
+  position: relative !important;
+  inset: auto;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+.presentation-dashboard .products-card .product-pie-list {
+  align-self: stretch;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.presentation-focus-modal-body .products-card,
+.presentation-focus-modal-body .products-card .products-layout {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.presentation-focus-modal-body .products-card {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+@media (min-width: 901px) and (max-width: 1400px), (min-width: 901px) and (max-height: 820px) {
+  html:has(.presentation-dashboard),
+  body:has(.presentation-dashboard),
+  #root:has(.presentation-dashboard),
+  .dashboard-page.presentation-mode:has(.presentation-dashboard),
+  .screen-wrapper:has(.presentation-dashboard),
+  .app-stage:has(.presentation-dashboard) {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden !important;
+  }
+
+  .presentation-dashboard.dashboard-content {
+    width: min(100%, 1680px) !important;
+    height: auto !important;
+    min-height: min(100dvh, 900px) !important;
+    max-width: 1680px !important;
+    max-height: none !important;
+    transform: none !important;
+    transform-origin: center top;
+    overflow: hidden !important;
+  }
+}
+
+.presentation-focus-modal-body .products-card .products-layout {
+  padding-bottom: clamp(12px, 1.2vw, 20px);
+}
+
+.presentation-focus-modal-body .products-card .donut-container {
+  top: auto;
+  align-self: center;
+  margin-block: auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(14px, 1.4vw, 24px);
+}
+
+@media (max-width: 900px) {
+  .presentation-focus-modal-body .products-card .products-layout {
+    overflow: hidden;
+  }
+
+  .presentation-focus-modal-body .products-card .product-pie-list {
+    min-height: 0;
+    max-height: 42vh;
+  }
+}
+
+[data-theme="light"] {
+  --present-bg: #FAFAFA;
+  --present-bg-soft: #F2F2F2;
+  --present-panel: #ffffff;
+  --present-panel-soft: #FAFAFA;
+  --present-panel-deep: #F2F2F2;
+  --present-row: rgba(166, 166, 168, 0.12);
+  --present-accent: #E67026;
+  --present-accent-deep: #E15716;
+  --present-accent-soft: #E67026;
+  --present-accent-warm: #E15716;
+  --present-muted: #717074;
+  --present-muted-2: #7D7D80;
+  --present-text: #242423;
+  --present-text-soft: #717074;
+  --present-line: #E5E5E5;
+  --present-border: rgba(230, 112, 38, 0.14);
+  --present-border-strong: rgba(230, 112, 38, 0.34);
+  --present-glow: rgba(36, 36, 35, 0.08);
+}
+
+[data-theme="light"] .dashboard-page.presentation-mode,
+[data-theme="light"] .presentation-shell,
+[data-theme="light"] .presentation-dashboard.dashboard-content,
+[data-theme="light"] .enterprise-present-shell {
+  color: var(--present-text);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='64' viewBox='0 0 96 64'%3E%3Cg fill='none' stroke='rgba(113,112,116,0.04)' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M14 18 L34 8'/%3E%3Cpath d='M62 18 L82 8'/%3E%3Cpath d='M38 48 L58 38'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(180deg, #FAFAFA 0%, #FAFAFA 100%) !important;
+  background-size: 96px 64px, auto !important;
+  background-repeat: repeat, no-repeat !important;
+}
+
+[data-theme="light"] .presentation-dashboard.dashboard-content {
+  width: min(100%, 1920px) !important;
+  max-width: 1920px !important;
+  margin-inline: auto !important;
+}
+
+[data-theme="light"] .presentation-header,
+[data-theme="light"] .presentation-dashboard .present-header,
+[data-theme="light"] .enterprise-present-header,
+[data-theme="light"] .presentation-panel,
+[data-theme="light"] .presentation-dashboard .dashboard-card,
+[data-theme="light"] .presentation-dashboard .stat-card,
+[data-theme="light"] .presentation-metric-card,
+[data-theme="light"] .enterprise-card,
+[data-theme="light"] .analytics-card,
+[data-theme="light"] .enterprise-present-card,
+[data-theme="light"] .enterprise-present-panel {
+  border-color: var(--present-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 250, 250, 0.96)),
+    var(--present-panel) !important;
+  box-shadow: 0 8px 24px rgba(36, 36, 35, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+[data-theme="light"] .presentation-panel-live {
+  border-color: var(--present-border-strong) !important;
+  box-shadow: inset 0 2px 0 var(--present-accent), 0 10px 26px rgba(36, 36, 35, 0.10) !important;
+}
+
+[data-theme="light"] .presentation-logo,
+[data-theme="light"] .presentation-brand img {
+  filter: none !important;
+}
+
+[data-theme="light"] .presentation-brand h1,
+[data-theme="light"] .presentation-dashboard .present-header h1,
+[data-theme="light"] .presentation-mode-label strong,
+[data-theme="light"] .enterprise-present-header-left h1,
+[data-theme="light"] .analytics-page-title h1 {
+  color: var(--present-accent) !important;
+  font-family: "Bebas Neue", Impact, "Arial Narrow", Helvetica, Arial, sans-serif;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-panel-header h2,
+[data-theme="light"] .presentation-dashboard .dashboard-card-header h2,
+[data-theme="light"] .presentation-source-row strong,
+[data-theme="light"] .presentation-product-item strong,
+[data-theme="light"] .presentation-terms-item strong,
+[data-theme="light"] .presentation-ranking-row strong,
+[data-theme="light"] .presentation-dashboard .company-list strong,
+[data-theme="light"] .presentation-dashboard .product-list strong,
+[data-theme="light"] .presentation-dashboard .product-list b,
+[data-theme="light"] .presentation-dashboard .product-pie-list strong,
+[data-theme="light"] .presentation-dashboard .product-pie-list b,
+[data-theme="light"] .analytics-card h2,
+[data-theme="light"] .enterprise-present-panel h2 {
+  color: var(--present-text) !important;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-company,
+[data-theme="light"] .presentation-live small,
+[data-theme="light"] .presentation-date-range,
+[data-theme="light"] .presentation-panel-header p,
+[data-theme="light"] .presentation-metric-card small,
+[data-theme="light"] .presentation-source-row span,
+[data-theme="light"] .presentation-product-total span,
+[data-theme="light"] .presentation-product-total small,
+[data-theme="light"] .presentation-product-item small,
+[data-theme="light"] .presentation-terms-item small,
+[data-theme="light"] .presentation-ranking-row small,
+[data-theme="light"] .presentation-dashboard .dashboard-card-header p,
+[data-theme="light"] .presentation-dashboard .stat-card span,
+[data-theme="light"] .presentation-dashboard .stat-card small,
+[data-theme="light"] .presentation-dashboard .company-list span,
+[data-theme="light"] .presentation-dashboard .product-list span,
+[data-theme="light"] .presentation-dashboard .product-pie-list span,
+[data-theme="light"] .enterprise-present-eyebrow,
+[data-theme="light"] .enterprise-present-clock,
+[data-theme="light"] .enterprise-present-card small,
+[data-theme="light"] .enterprise-present-card span {
+  color: var(--present-muted) !important;
+}
+
+[data-theme="light"] .presentation-live-dot,
+[data-theme="light"] .presentation-metric-card strong,
+[data-theme="light"] .presentation-product-total strong,
+[data-theme="light"] .presentation-ranking-row em,
+[data-theme="light"] .presentation-ranking-row span,
+[data-theme="light"] .presentation-dashboard .presentation-header-control span,
+[data-theme="light"] .presentation-dashboard .presentation-live-clock strong,
+[data-theme="light"] .presentation-dashboard .stat-card strong,
+[data-theme="light"] .presentation-dashboard .donut-container strong,
+[data-theme="light"] .presentation-dashboard .rankings-list b,
+[data-theme="light"] .enterprise-present-exit,
+[data-theme="light"] .enterprise-present-card strong,
+[data-theme="light"] .enterprise-present-stat strong,
+[data-theme="light"] .analytics-filter-row span,
+[data-theme="light"] .analytics-tooltip strong {
+  color: var(--present-accent) !important;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-metric-card::before,
+[data-theme="light"] .enterprise-card::before,
+[data-theme="light"] .enterprise-table-card::before,
+[data-theme="light"] .enterprise-filters::before,
+[data-theme="light"] .presentation-dashboard .dashboard-card::before,
+[data-theme="light"] .presentation-dashboard .stat-card::before {
+  background: linear-gradient(90deg, transparent, var(--present-accent), transparent) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-source-row,
+[data-theme="light"] .presentation-ranking-row,
+[data-theme="light"] .presentation-dashboard .company-list article,
+[data-theme="light"] .presentation-dashboard .rankings-list article,
+[data-theme="light"] .presentation-dashboard .product-list article,
+[data-theme="light"] .presentation-dashboard .product-pie-list article,
+[data-theme="light"] .analytics-table-scroll thead,
+[data-theme="light"] .enterprise-table th {
+  background: var(--present-row) !important;
+}
+
+[data-theme="light"] .presentation-source-meter,
+[data-theme="light"] .presentation-dashboard .company-list i,
+[data-theme="light"] .presentation-dashboard .terms-funnel > i,
+[data-theme="light"] .presentation-dashboard .counter-funnel > i,
+[data-theme="light"] .presentation-dashboard .rankings-list article > span,
+[data-theme="light"] .presentation-product-total,
+[data-theme="light"] .presentation-dashboard .donut-container > div:last-child {
+  background-color: #ffffff !important;
+  box-shadow: inset 0 0 0 1px rgba(230, 112, 38, 0.10), 0 6px 16px rgba(36, 36, 35, 0.08) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .rankings-list article[data-rank="1"] {
+  border-color: rgba(212, 175, 55, 0.54) !important;
+  background:
+    linear-gradient(90deg, rgba(212, 175, 55, 0.16), rgba(255, 255, 255, 0.98) 42%),
+    #ffffff !important;
+  box-shadow: 0 8px 24px rgba(36, 36, 35, 0.08) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .rankings-list article[data-rank="2"] {
+  border-color: rgba(166, 166, 168, 0.54) !important;
+  background:
+    linear-gradient(90deg, rgba(166, 166, 168, 0.18), rgba(255, 255, 255, 0.98) 42%),
+    #ffffff !important;
+  box-shadow: 0 8px 24px rgba(36, 36, 35, 0.08) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .rankings-list article[data-rank="3"] {
+  border-color: rgba(176, 111, 66, 0.48) !important;
+  background:
+    linear-gradient(90deg, rgba(176, 111, 66, 0.16), rgba(255, 255, 255, 0.98) 42%),
+    #ffffff !important;
+  box-shadow: 0 8px 24px rgba(36, 36, 35, 0.08) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .rankings-list article[data-rank="1"] > span {
+  color: #8A6D1F !important;
+  background: rgba(212, 175, 55, 0.18) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-dashboard .rankings-list article[data-rank="2"] > span {
+  color: #717074 !important;
+  background: rgba(166, 166, 168, 0.22) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-dashboard .rankings-list article[data-rank="3"] > span {
+  color: #8A4E22 !important;
+  background: rgba(176, 111, 66, 0.18) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-exit-btn,
+[data-theme="light"] .presentation-dashboard .presentation-close-button,
+[data-theme="light"] .enterprise-present-exit,
+[data-theme="light"] .enterprise-present-filterbar button,
+[data-theme="light"] .analytics-filter-row button {
+  border-color: rgba(230, 112, 38, 0.34) !important;
+  color: var(--present-accent) !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(36, 36, 35, 0.07) !important;
+}
+
+[data-theme="light"] .presentation-exit-btn:hover,
+[data-theme="light"] .presentation-dashboard .presentation-close-button:hover,
+[data-theme="light"] .enterprise-present-exit:hover,
+[data-theme="light"] .enterprise-present-filterbar button:hover,
+[data-theme="light"] .analytics-filter-row button:hover {
+  color: #ffffff !important;
+  border-color: var(--present-accent-deep) !important;
+  background: var(--present-accent-deep) !important;
+  box-shadow: 0 10px 22px rgba(230, 112, 38, 0.18) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-header-control select,
+[data-theme="light"] .enterprise-present-filters select,
+[data-theme="light"] .enterprise-present-filterbar select,
+[data-theme="light"] .analytics-filter-row select,
+[data-theme="light"] .analytics-filter-row button {
+  border-color: rgba(230, 112, 38, 0.20) !important;
+  color: var(--present-text) !important;
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .presentation-dashboard .presentation-header-control select:disabled {
+  border-color: rgba(166, 166, 168, 0.24) !important;
+  color: rgba(113, 112, 116, 0.54) !important;
+  background: #F2F2F2 !important;
+}
+
+[data-theme="light"] .presentation-tooltip,
+[data-theme="light"] .analytics-tooltip,
+[data-theme="light"] .enterprise-tooltip,
+[data-theme="light"] .enterprise-chart-tooltip,
+[data-theme="light"] .presentation-smart-tooltip {
+  border-color: rgba(230, 112, 38, 0.22) !important;
+  background: #ffffff !important;
+  color: var(--present-text) !important;
+  box-shadow: 0 12px 28px rgba(36, 36, 35, 0.12) !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="light"] .presentation-smart-tooltip strong {
+  color: var(--present-accent) !important;
+}
+
+[data-theme="light"] .presentation-smart-tooltip span {
+  color: var(--present-text-soft) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-card .recharts-cartesian-grid line,
+[data-theme="light"] .presentation-chart-fill .recharts-cartesian-grid line,
+[data-theme="light"] .analytics-card .recharts-cartesian-grid line,
+[data-theme="light"] .enterprise-card .recharts-cartesian-grid line {
+  stroke: #E5E5E5 !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-card .recharts-cartesian-axis-tick text,
+[data-theme="light"] .presentation-chart-fill .recharts-cartesian-axis-tick text,
+[data-theme="light"] .analytics-card .recharts-cartesian-axis-tick text,
+[data-theme="light"] .enterprise-card .recharts-cartesian-axis-tick text {
+  fill: #717074 !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-comparison-svg line {
+  stroke: #E5E5E5 !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-comparison-svg text {
+  fill: #717074 !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-comparison-svg path {
+  stroke: var(--present-accent) !important;
+  filter: none !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-comparison-svg circle {
+  fill: var(--present-accent) !important;
+  stroke: var(--present-accent-deep) !important;
+  filter: none !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-comparison-legend-item b {
+  color: var(--present-text) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-comparison-legend-icon.is-gk {
+  background: linear-gradient(90deg, #E67026, #E15716) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-dashboard .sales-comparison-legend-icon.is-gross::before,
+[data-theme="light"] .presentation-dashboard .sales-comparison-legend-icon.is-gross::after {
+  background: #A6A6A8 !important;
+  border-color: #717074 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-dashboard .product-mode-switch {
+  color: var(--present-text) !important;
+  background: #ffffff !important;
+  border-color: rgba(230, 112, 38, 0.34) !important;
+  box-shadow: inset 0 0 0 1px rgba(230, 112, 38, 0.06), 0 8px 18px rgba(36, 36, 35, 0.07) !important;
+}
+
+[data-theme="light"] .presentation-dashboard .product-mode-switch::before {
+  background: linear-gradient(180deg, #E67026, #E15716) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .presentation-dashboard .product-mode-switch span {
+  color: var(--present-text) !important;
+}
+
+[data-theme="light"] .presentation-focus-backdrop {
+  background: rgba(36, 36, 35, 0.38) !important;
+}
+
+[data-theme="light"] .presentation-focus-modal {
+  border-color: rgba(230, 112, 38, 0.28) !important;
+  background: #ffffff !important;
+  box-shadow: 0 30px 90px rgba(36, 36, 35, 0.20) !important;
+}
+
+[data-theme="light"] .presentation-focus-modal > header {
+  border-bottom-color: rgba(36, 36, 35, 0.08) !important;
+}
+
+[data-theme="light"] .presentation-focus-modal > header strong {
+  color: var(--present-accent) !important;
+}
+
+[data-theme="light"] .presentation-focus-modal > header button,
+[data-theme="light"] .presentation-dashboard .presentation-enlarge-btn {
+  color: var(--present-accent) !important;
+  background: #ffffff !important;
+  border-color: rgba(230, 112, 38, 0.28) !important;
+  box-shadow: 0 8px 18px rgba(36, 36, 35, 0.08) !important;
+}

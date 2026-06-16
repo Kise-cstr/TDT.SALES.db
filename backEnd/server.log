@@ -1,0 +1,6 @@
+
+> backend@1.0.0 start
+> node source/server.js
+
+◇ injected env (2) from .env // tip: ⌘ suppress logs { quiet: true }
+Server running on port 5000
