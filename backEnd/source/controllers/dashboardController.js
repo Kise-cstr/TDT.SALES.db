@@ -33,6 +33,85 @@ const resolveGkFromFob = (gkValue, fobValue) => {
   return gk !== 0 ? gk : toNumber(fobValue);
 };
 
+const resolveCounterValue = row => (
+  row?.counter
+  || row?.salesPerformance
+  || row?.performance
+  || row?.counterLabel
+  || ''
+);
+
+const normalizeCounterPerformance = value => {
+  const label = String(value || '').trim().toLowerCase();
+  const key = label.replace(/\s+/g, '');
+  if (key === 'acquisition') return 'Acquisition';
+  if (key === 'retention') return 'Retention';
+  if (key === 'revival') return 'Revival';
+  if (key.includes('revival') || key.includes('rev/rev') || key.includes('rev') || key === 'r') return 'Revival';
+  if (key.includes('first') || key === 'ft' || key === 'f/t') return 'Acquisition';
+  if (!key || key === 'n' || key === 'n/n' || key === 'new' || key === 'new(n)' || key === 'new(n/n)' || key === '---' || key === 'nocounter' || key === 'blank' || key === '-') return 'Retention';
+  return 'Retention';
+};
+
+const counterPerformanceRank = value => {
+  const label = normalizeCounterPerformance(value);
+  if (label === 'Acquisition') return 3;
+  if (label === 'Revival') return 2;
+  return 1;
+};
+
+const pickCounterPerformance = (totals, fallback = 'Retention') => {
+  const entries = Array.from((totals || new Map()).entries());
+  if (!entries.length) return fallback;
+  const explicitEntries = entries.filter(([label]) => normalizeCounterPerformance(label) !== 'Retention');
+  const candidateEntries = explicitEntries.length ? explicitEntries : entries;
+  const [winner] = candidateEntries.sort((a, b) => {
+    const rankDelta = counterPerformanceRank(b[0]) - counterPerformanceRank(a[0]);
+    if (rankDelta) return rankDelta;
+    const countDelta = b[1] - a[1];
+    if (countDelta) return countDelta;
+    return String(a[0]).localeCompare(String(b[0]));
+  })[0] || [];
+  return normalizeCounterPerformance(winner || fallback);
+};
+
+const buildCounterDistribution = (records = []) => {
+  const companies = new Map();
+
+  (Array.isArray(records) ? records : []).forEach(record => {
+    const companyName = String(record.clientName || record.companyName || record.name || '').trim();
+    if (!companyName) return;
+
+    const key = companyName.toUpperCase();
+    const performance = normalizeCounterPerformance(resolveCounterValue(record));
+    const current = companies.get(key) || {
+      performanceTotals: new Map(),
+      bestPerformance: 'Retention'
+    };
+
+    current.performanceTotals.set(performance, (current.performanceTotals.get(performance) || 0) + 1);
+    if (counterPerformanceRank(performance) > counterPerformanceRank(current.bestPerformance)) {
+      current.bestPerformance = performance;
+    }
+    companies.set(key, current);
+  });
+
+  const totals = new Map([
+    ['Acquisition', { label: 'Acquisition', count: 0 }],
+    ['Retention', { label: 'Retention', count: 0 }],
+    ['Revival', { label: 'Revival', count: 0 }]
+  ]);
+
+  companies.forEach(company => {
+    const bucket = pickCounterPerformance(company.performanceTotals, company.bestPerformance || 'Retention');
+    const current = totals.get(bucket) || { label: bucket, count: 0 };
+    current.count += 1;
+    totals.set(bucket, current);
+  });
+
+  return ['Acquisition', 'Retention', 'Revival'].map(label => totals.get(label) || { label, count: 0 });
+};
+
 const normalize = value => String(value || '').trim();
 const upper = value => normalize(value).toUpperCase();
 const normalizeHeader = value => normalize(value)
@@ -573,8 +652,10 @@ const buildAnalytics = (batch, query = {}) => {
     .map(item => ({ ...item, percentage: percent(item.value, sales.length) }));
   const leadSourceDistribution = groupRecords(sales, sourceLabel, () => 1)
     .map(item => ({ ...item, percentage: percent(item.value, sales.length) }));
-  const counterDistribution = groupRecords(sales, record => record.counter || 'No Counter', () => 1)
-    .map(item => ({ ...item, percentage: percent(item.value, sales.length) }));
+  const counterDistribution = buildCounterDistribution(sales);
+  const totalCounterCompanies = counterDistribution.reduce((sum, item) => sum + toNumber(item.count), 0) || 1;
+  const counterDistributionWithPercent = counterDistribution
+    .map(item => ({ ...item, percentage: percent(item.count, totalCounterCompanies) }));
   const termsDistribution = groupRecords(sales, record => record.terms, () => 1)
     .map(item => ({ ...item, percentage: percent(item.value, sales.length) }));
   const ordersPerClientType = leadSourceDistribution;
@@ -650,7 +731,7 @@ const buildAnalytics = (batch, query = {}) => {
       { metric: 'totalGrossSales', title: 'Total Gross Sales', value: compactCurrency(totalGrossSales), rawValue: totalGrossSales, trend: 'up', trendValue: `${monthly.length} months`, icon: 'dollar' },
       { metric: 'totalGk', title: 'Total GK', value: compactCurrency(totalGk), rawValue: totalGk, trend: 'up', trendValue: `${percent(totalGk, totalGrossSales)}% GK`, icon: 'chart' },
       { metric: 'totalOrders', title: 'Total Sales Orders', value: String(sales.length), rawValue: sales.length, trend: 'up', trendValue: `${uniqueClients} clients`, icon: 'users' },
-      { metric: 'totalFob', title: 'Total FOB', value: compactCurrency(totalFob), rawValue: totalFob, trend: 'up', trendValue: `${counterDistribution.length} counters`, icon: 'chart' },
+      { metric: 'totalFob', title: 'Total FOB', value: compactCurrency(totalFob), rawValue: totalFob, trend: 'up', trendValue: `${counterDistributionWithPercent.length} counters`, icon: 'chart' },
       { metric: 'closedDeals', title: 'Counted Sales', value: String(closedDeals), rawValue: closedDeals, trend: 'up', trendValue: `${percent(closedDeals, sales.length)}% with sales`, icon: 'target' },
       { metric: 'activeReps', title: 'Active Sales Reps', value: String(activeReps), rawValue: activeReps, trend: 'up', trendValue: `${repPerformance.length} ranked`, icon: 'users' },
     ],
@@ -668,7 +749,7 @@ const buildAnalytics = (batch, query = {}) => {
       salesPerClientType: groupRecords(sales, record => record.clientType, record => record.grossSales),
       gkPerClientType: groupRecords(sales, record => record.clientType, record => resolveGkFromFob(record.finalGk || record.salesmanGk, record.fob)),
       fobPerBranch: groupRecords(sales, record => record.branch, record => record.fob),
-      counterDistribution,
+      counterDistribution: counterDistributionWithPercent,
       salesHeatmapByDay: groupRecords(sales, record => dayName(record.date), record => record.grossSales),
       leadSourceDistribution,
       leadsPerSource: ordersPerClientType,
@@ -1078,7 +1159,7 @@ const getGoogleAccessToken = async () => {
 
 const mapSheetRowsToSalesRecords = rows => {
   if (!rows?.length) return [];
-  const headerSignals = new Set(['date', 'branch', 'branchclass', 'salesrepcode', 'salesrepname', 'clientname', 'amount']);
+  const headerSignals = new Set(['date', 'branch', 'branchclass', 'salesrepcode', 'salesrepname', 'clientname', 'amount', 'counter', 'performance', 'salesperformance']);
   const headerRowIndex = rows.findIndex(row => row
     .map(normalizeHeader)
     .filter(header => headerSignals.has(header)).length >= 2);
@@ -1106,7 +1187,7 @@ const mapSheetRowsToSalesRecords = rows => {
     salesmanGkPercent: find('salesman gk %', 'salesman gk percent', 'salesman percent', 'salesman percentage', 'salesman', 'gk %'),
     fob: find('fob', 'free on board'),
     weight: find('weight', 'tons', 'tonnage', 'ton'),
-    counter: find('counter'),
+    counter: find('counter', 'sales performance', 'salesperformance', 'performance', 'counter label'),
     remarks: find('memo', 'remarks', 'notes'),
   };
   idx.salesmanGkPercent = rows[headerRowIndex].findIndex((header, index) => {

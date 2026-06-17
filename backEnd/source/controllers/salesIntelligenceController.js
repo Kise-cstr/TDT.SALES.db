@@ -1,6 +1,7 @@
 const multer = require('multer');
 const prisma = require('../config/db');
 const {
+  computeProductBreakdown,
   computeProductTons,
   extractUnitWeightKg,
   normalizeProductGroupKey,
@@ -308,6 +309,15 @@ const buildAnalyticsPayload = async (query = {}) => {
   const productTonnage = groupBy(filteredProducts, row => row.category, row => row.tons);
   const topProducts = groupBy(filteredProducts, row => row.productName, row => row.tons).slice(0, 10);
 
+  // Compute product breakdown with percentages using the new function
+  const productBreakdownResult = computeProductBreakdown(filteredProducts, {
+    dateRange: query.startDate || query.endDate ? {
+      startDate: query.startDate,
+      endDate: query.endDate,
+    } : undefined,
+    filters: query.category ? { category: query.category } : undefined,
+  });
+
   const monthlyMap = new Map();
   filteredOrders.forEach(order => {
     if (!order.date) return;
@@ -352,6 +362,7 @@ const buildAnalyticsPayload = async (query = {}) => {
       salesRepRankings,
       categoryTons: productTonnage,
       topTonnageProducts: topProducts,
+      productDistribution: productBreakdownResult.productBreakdown,
     },
     filters: {
       years: [...new Set(orders.map(row => row.date?.getUTCFullYear()).filter(Boolean))].sort(),

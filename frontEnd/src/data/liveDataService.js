@@ -105,7 +105,7 @@ const parseDelimitedRows = text => {
 };
 
 const findHeaderIndex = rows => {
-  const signals = new Set(['date', 'branchclass', 'branch', 'class', 'salesrepcode', 'salesrepname', 'repcode', 'repname', 'rep', 'clientname', 'customername', 'companyname', 'name', 'amount']);
+  const signals = new Set(['date', 'branchclass', 'branch', 'class', 'salesrepcode', 'salesrepname', 'repcode', 'repname', 'rep', 'clientname', 'customername', 'companyname', 'name', 'amount', 'counter', 'performance', 'salesperformance']);
   return rows.findIndex(row => row.map(normalizeHeader).filter(header => signals.has(header)).length >= 4);
 };
 
@@ -118,6 +118,48 @@ const normalizeRep = record => {
   const code = normalizeSalesRepCode(record.repCode);
   if (!code) return 'Unassigned';
   return getSalesRepNameFromCode(code) || code;
+};
+
+const resolveCounterValue = row => (
+  row?.counter
+  || row?.salesPerformance
+  || row?.performance
+  || row?.counterLabel
+  || ''
+);
+
+const normalizeCounterPerformance = value => {
+  const label = String(value || '').trim().toLowerCase();
+  const key = label.replace(/\s+/g, '');
+  if (key === 'acquisition') return 'Acquisition';
+  if (key === 'retention') return 'Retention';
+  if (key === 'revival') return 'Revival';
+  if (key.includes('revival') || key.includes('rev/rev') || key.includes('rev') || key === 'r') return 'Revival';
+  if (key.includes('first') || key === 'ft' || key === 'f/t') return 'Acquisition';
+  if (!key || key === 'n' || key === 'n/n' || key === 'new' || key === 'new(n)' || key === 'new(n/n)' || key === '---' || key === 'nocounter' || key === 'blank' || key === '-') return 'Retention';
+  return 'Retention';
+};
+
+const counterPerformanceRank = value => {
+  const label = normalizeCounterPerformance(value);
+  if (label === 'Acquisition') return 3;
+  if (label === 'Revival') return 2;
+  return 1;
+};
+
+const pickCounterPerformance = (totals, fallback = 'Retention') => {
+  const entries = Array.from((totals || new Map()).entries());
+  if (!entries.length) return fallback;
+  const explicitEntries = entries.filter(([label]) => normalizeCounterPerformance(label) !== 'Retention');
+  const candidateEntries = explicitEntries.length ? explicitEntries : entries;
+  const [winner] = candidateEntries.sort((a, b) => {
+    const rankDelta = counterPerformanceRank(b[0]) - counterPerformanceRank(a[0]);
+    if (rankDelta) return rankDelta;
+    const countDelta = b[1] - a[1];
+    if (countDelta) return countDelta;
+    return String(a[0]).localeCompare(String(b[0]));
+  })[0] || [];
+  return normalizeCounterPerformance(winner || fallback);
 };
 
 const productTons = record => computeProductTons(record);
@@ -192,6 +234,43 @@ const buildRepRoster = (records = []) => {
   return Array.from(roster.values());
 };
 
+const buildCounterDistribution = (records = []) => {
+  const companies = new Map();
+
+  (Array.isArray(records) ? records : []).forEach(record => {
+    const companyName = String(record.clientName || record.companyName || record.name || '').trim();
+    if (!companyName) return;
+
+    const key = companyName.toUpperCase();
+    const performance = normalizeCounterPerformance(resolveCounterValue(record));
+    const current = companies.get(key) || {
+      performanceTotals: new Map(),
+      bestPerformance: 'Retention'
+    };
+
+    current.performanceTotals.set(performance, (current.performanceTotals.get(performance) || 0) + 1);
+    if (counterPerformanceRank(performance) > counterPerformanceRank(current.bestPerformance)) {
+      current.bestPerformance = performance;
+    }
+    companies.set(key, current);
+  });
+
+  const totals = new Map([
+    ['Acquisition', { label: 'Acquisition', count: 0 }],
+    ['Retention', { label: 'Retention', count: 0 }],
+    ['Revival', { label: 'Revival', count: 0 }]
+  ]);
+
+  companies.forEach(company => {
+    const bucket = pickCounterPerformance(company.performanceTotals, company.bestPerformance || 'Retention');
+    const current = totals.get(bucket) || { label: bucket, count: 0 };
+    current.count += 1;
+    totals.set(bucket, current);
+  });
+
+  return ['Acquisition', 'Retention', 'Revival'].map(label => totals.get(label) || { label, count: 0 });
+};
+
 const validateGroupedProductTotals = (records, groupedProducts) => {
   const rawTotals = new Map();
   records.forEach(record => {
@@ -241,7 +320,7 @@ const rowsToSalesRecords = rows => {
     salesmanGk: find('salesman gk', 'gross kita'),
     weight: find('weight', 'tons', 'tonnage', 'ton'),
     fob: find('fob'),
-    counter: find('counter'),
+    counter: find('counter', 'sales performance', 'salesperformance', 'performance', 'counter label'),
     memo: find('memo', 'remarks', 'notes')
   };
 
@@ -527,9 +606,10 @@ const buildSalesPerformance = (records, period = 'Monthly') => {
           : period === 'Yearly'
             ? String(date.getFullYear())
             : monthLabels[date.getMonth()];
-    const current = groups.get(key) || { label, sales: 0, target: 0, gk: 0 };
+    const current = groups.get(key) || { label, sales: 0, target: 0, gk: 0, fob: 0 };
     current.sales += record.grossSales;
     current.gk += record.gk;
+    current.fob += toNumber(record.fob);
     current.leads = (current.leads || 0) + 1;
     current.repKeys = current.repKeys || new Set();
     current.repKeys.add(entityKey(normalizeRep(record)));
@@ -542,6 +622,7 @@ const buildSalesPerformance = (records, period = 'Monthly') => {
       sales: value.sales,
       target: value.target,
       gk: value.gk,
+      fob: value.fob,
       leads: value.leads || 0,
       reps: value.repKeys?.size || 0
     }));
@@ -581,7 +662,7 @@ const buildLiveData = (records, productRecords = [], options = {}) => {
   const repRoster = buildRepRoster(records);
   const repGroups = groupRecords(records, normalizeRep, record => record.grossSales);
   const branchGroups = groupRecords(records, record => record.branch, () => 1);
-  const counterGroups = groupRecords(records, record => record.counter || 'No Counter', () => 1);
+  const counterGroups = buildCounterDistribution(records);
   const termsGroups = groupRecords(records, record => record.terms || 'Unspecified', () => 1);
   const companyGroups = getUniqueCompanyGroups(records);
 
@@ -630,7 +711,7 @@ const buildLiveData = (records, productRecords = [], options = {}) => {
     },
     salesPerformance: buildSalesPerformance(records, options.period),
     branchData: branchGroups.map(group => ({ label: group.label, count: group.value })),
-    counterData: counterGroups.map(group => ({ label: group.label, count: group.value })),
+    counterData: counterGroups.map(group => ({ label: group.label, count: group.count })),
     sourceData: groupRecords(records, record => record.leadSource || 'Unspecified', () => 1).map(group => {
       const sourceRows = records.filter(record => entityKey(record.leadSource || 'Unspecified') === entityKey(group.label));
       return {

@@ -30,6 +30,16 @@ const strictProductKey = value => normalizeText(value)
   .replace(/\s+/g, ' ')
   .trim();
 
+const parseNumeric = value => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const cleaned = normalizeText(value)
+    .replace(/,/g, '')
+    .replace(/\((.*)\)/, '-$1')
+    .replace(/[^0-9.-]/g, '');
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const PRODUCT_ALIASES = [
   { name: 'DRBS', pattern: /\bDRB[S]?\b|\bDEFORMED(?:\s+ROUND)?\s*BARS?\b|\bREBARS?\b/ },
   { name: 'ANGLE BAR', pattern: /\bANG(?:LE)?\s*BARS?\b|\bAB\s*\d*\b|\bAB\d+\b/ },
@@ -79,18 +89,23 @@ export const productDisplayName = record => {
 };
 
 export const extractUnitWeightKg = value => {
-  const match = normalizeText(value).match(/([\d,.]+)\s*kgs?/i);
-  const parsed = match ? Number(String(match[1]).replace(/,/g, '')) : 0;
-  return Number.isFinite(parsed) ? parsed : 0;
+  const match = normalizeText(value).match(/([\d,.]+)\s*(?:kgs?|kg)\b/i);
+  return match ? parseNumeric(match[1]) : 0;
 };
 
 export const computeProductTons = record => {
-  const explicitTons = Number(record?.tons);
+  const explicitTons = parseNumeric(record?.tons);
   if (Number.isFinite(explicitTons) && explicitTons > 0) return explicitTons;
-  const quantity = Number(record?.quantity ?? record?.qty) || 0;
+  const quantity = parseNumeric(record?.quantity ?? record?.qty);
   const unit = productKey(record?.unit);
   if (unit === 'TON' || unit === 'TONS') return quantity;
-  const weightKg = Number(record?.weightKgs ?? record?.unitWeightKg ?? record?.kgs) || extractUnitWeightKg(record?.productName);
+  const weightKg = parseNumeric(
+    record?.weightKgs
+    ?? record?.weightKg
+    ?? record?.unitWeightKg
+    ?? record?.kgs
+    ?? record?.weight
+  ) || extractUnitWeightKg(record?.productName);
   if (!quantity || !weightKg) return 0;
   return (weightKg * quantity) / 1000;
 };

@@ -64,20 +64,18 @@ const formatTons = value => {
   return `${tons.toLocaleString(undefined, { minimumFractionDigits: tons && tons < 10 ? 1 : 0, maximumFractionDigits: 1 })} TONS`;
 };
 
-const normalizeCounter = value => {
-  const label = String(value || '').trim();
-  const key = label.toLowerCase();
-  if (key.includes('revival') || key === 'r' || key === 'rev') return 'Revival';
-  if (key.includes('first') || key === 'ft' || key === 'f/t') return 'Acquisition';
-  if (!key || key === 'n' || key === 'new' || key === 'n/n' || key === 'new (n)' || key === 'new (n/n)' || key === '---' || key === 'no counter' || key === 'blank' || key === '-') return 'Retention';
-  return 'Retention';
-};
-
 const rowRepLabel = row => String(
   getSalesRepNameFromCode(row?.repCode) || row?.salesRep || row?.repName || row?.repCode || 'Unassigned'
 ).trim() || 'Unassigned';
 const repKey = value => String(value || 'Unassigned').trim().toUpperCase();
 const companyKey = value => String(value || '').trim().toUpperCase();
+const resolveCounterValue = row => (
+  row?.counter
+  || row?.salesPerformance
+  || row?.performance
+  || row?.counterLabel
+  || ''
+);
 const normalizePaymentTerm = value => {
   const raw = String(value || '').trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   const key = raw.toLowerCase();
@@ -100,9 +98,39 @@ const resolveGkFromFob = (gkValue, fobValue) => {
 const normalizeCompanyPerformance = value => {
   const label = String(value || '').trim().toLowerCase();
   if (!label) return 'Retention';
-  if (label.includes('revival') || label === 'r' || label === 'rev') return 'Revival';
-  if (label.includes('first') || label === 'ft' || label === 'f/t' || label.includes('new')) return 'Acquisition';
+  const key = label.replace(/\s+/g, '');
+  if (key === 'acquisition') return 'Acquisition';
+  if (key === 'retention') return 'Retention';
+  if (key === 'revival') return 'Revival';
+  if (key.includes('revival') || key.includes('rev/rev') || key.includes('rev') || key === 'r') return 'Revival';
+  if (key.includes('first') || key === 'ft' || key === 'f/t') return 'Acquisition';
+  if (key === 'n' || key === 'n/n' || key === 'new' || key === 'new(n)' || key === 'new(n/n)' || key === '---' || key === 'nocounter' || key === 'blank' || key === '-') return 'Retention';
   return 'Retention';
+};
+
+const performanceRank = value => {
+  const label = normalizeCompanyPerformance(value);
+  if (label === 'Acquisition') return 3;
+  if (label === 'Revival') return 2;
+  return 1;
+};
+
+const pickCompanyPerformance = (totals, fallback = 'Retention') => {
+  const entries = Array.from((totals || new Map()).entries());
+  if (!entries.length) return fallback;
+
+  const explicitEntries = entries.filter(([label]) => normalizeCompanyPerformance(label) !== 'Retention');
+  const candidateEntries = explicitEntries.length ? explicitEntries : entries;
+
+  const [winner] = candidateEntries.sort((a, b) => {
+    const rankDelta = performanceRank(b[0]) - performanceRank(a[0]);
+    if (rankDelta) return rankDelta;
+    const countDelta = b[1] - a[1];
+    if (countDelta) return countDelta;
+    return String(a[0]).localeCompare(String(b[0]));
+  })[0] || [];
+
+  return normalizeCompanyPerformance(winner || fallback);
 };
 
 export const getActiveDealRows = (rows = [], filters = {}) => {
@@ -120,18 +148,43 @@ export const buildDealCountByRep = (rows = []) => {
 };
 
 const buildPresentationCounterData = rows => {
-  const totals = new Map(counterBuckets.map(label => [label, { count: 0, sales: 0, gk: 0, reps: new Set(), companies: new Set() }]));
+  const companies = new Map();
 
-  (Array.isArray(rows) ? rows : []).forEach(row => {
-    const label = normalizeCounter(row.counter);
-    const current = totals.get(label) || { count: 0, sales: 0, gk: 0, reps: new Set(), companies: new Set() };
-    const companyKey = String(row.clientName || row.companyName || row.name || '').trim().toUpperCase();
-    current.count += 1;
+  (Array.isArray(rows) ? rows : []).forEach((row, index) => {
+    const companyName = String(row.clientName || row.companyName || row.name || '').trim();
+    if (!companyName) return;
+
+    const key = companyKey(companyName);
+    const performance = normalizeCompanyPerformance(resolveCounterValue(row));
+    const current = companies.get(key) || {
+      label: companyName,
+      sales: 0,
+      gk: 0,
+      reps: new Set(),
+      performanceTotals: new Map(),
+      bestPerformance: 'Retention'
+    };
+
     current.sales += toNumber(row.grossSales || row.sales);
     current.gk += resolveGkFromFob(row.salesmanGk || row.gk || row.finalGk, row.fob);
     current.reps.add(rowRepLabel(row).toUpperCase());
-    if (companyKey) current.companies.add(companyKey);
-    totals.set(label, current);
+    current.performanceTotals.set(performance, (current.performanceTotals.get(performance) || 0) + 1);
+    if (performanceRank(performance) > performanceRank(current.bestPerformance)) {
+      current.bestPerformance = performance;
+    }
+    companies.set(key, current);
+  });
+
+  const totals = new Map(counterBuckets.map(label => [label, { count: 0, sales: 0, gk: 0, reps: new Set() }]));
+
+  companies.forEach(company => {
+    const bucket = pickCompanyPerformance(company.performanceTotals, company.bestPerformance || 'Retention');
+    const current = totals.get(bucket) || { count: 0, sales: 0, gk: 0, reps: new Set() };
+    current.count += 1;
+    current.sales += company.sales;
+    current.gk += company.gk;
+    company.reps.forEach(rep => current.reps.add(rep));
+    totals.set(bucket, current);
   });
 
   return counterBuckets.map(label => {
@@ -139,7 +192,7 @@ const buildPresentationCounterData = rows => {
     return {
       label,
       displayLabel: counterDisplayLabels[label] || label,
-      count: bucket.companies.size,
+      count: bucket.count,
       sales: Math.round(bucket.sales || 0),
       gk: Math.round(bucket.gk || 0),
       reps: bucket.reps.size || 0
@@ -316,18 +369,20 @@ const buildCompanySummaries = liveData => {
       performanceTotals: new Map(),
       paymentTotals: new Map(),
       latestDate: null,
-      latestPerformance: 'Retention',
+      bestPerformance: 'Retention',
       latestPayment: 'Unspecified'
     };
     current.value += rowValue;
     current.repTotals.set(repLabel, (current.repTotals.get(repLabel) || 0) + rowValue);
-    const performance = normalizeCompanyPerformance(row.counter);
+    const performance = normalizeCompanyPerformance(resolveCounterValue(row));
     const paymentTerm = normalizePaymentTerm(row.terms);
     current.performanceTotals.set(performance, (current.performanceTotals.get(performance) || 0) + 1);
     current.paymentTotals.set(paymentTerm, (current.paymentTotals.get(paymentTerm) || 0) + 1);
+    if (performanceRank(performance) > performanceRank(current.bestPerformance)) {
+      current.bestPerformance = performance;
+    }
     if (rowDate && !Number.isNaN(rowDate.getTime()) && (!current.latestDate || rowDate > current.latestDate)) {
       current.latestDate = rowDate;
-      current.latestPerformance = performance;
       current.latestPayment = paymentTerm;
     }
     companies.set(key, current);
@@ -347,7 +402,7 @@ const buildCompanySummaries = liveData => {
         })[0] || [];
         return winner || fallback;
       };
-      const dominantPerformance = pickDominant(company.performanceTotals, company.latestPerformance || 'Retention');
+      const dominantPerformance = pickCompanyPerformance(company.performanceTotals, company.bestPerformance || 'Retention');
       const dominantPayment = pickDominant(company.paymentTotals, company.latestPayment || 'Unspecified');
       return {
         label: company.label,
@@ -487,7 +542,7 @@ const buildPresentationData = analytics => {
   const salesComparison = (salesComparisonSource || []).map(row => ({
     month: row.label,
     gross: Math.round((toNumber(row.sales) / 1000000) * 10) / 10,
-    gk: Math.round((toNumber(row.gk) / 1000000) * 10) / 10,
+    gk: Math.round((toNumber(row.fob ?? row.gk) / 1000000) * 10) / 10,
     leads: toNumber(row.leads),
     reps: toNumber(row.reps)
   }));

@@ -46,7 +46,7 @@ function SalesBarChart({ data: uploadedData, metric = 'all', period = 'Monthly' 
     () => data.map(row => ({
       month: row.label,
       gross: Math.round(((Number(row.sales) || 0) / 1000000) * 10) / 10,
-      gk: Math.round(((Number(row.gk) || 0) / 1000000) * 10) / 10
+      gk: Math.round(((Number(row.fob ?? row.gk) || 0) / 1000000) * 10) / 10
     })),
     [data]
   );

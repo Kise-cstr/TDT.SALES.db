@@ -9,6 +9,16 @@ const strictProductKey = value => normalizeText(value)
   .replace(/\s+/g, ' ')
   .trim();
 
+const parseNumeric = value => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const cleaned = normalizeText(value)
+    .replace(/,/g, '')
+    .replace(/\((.*)\)/, '-$1')
+    .replace(/[^0-9.-]/g, '');
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const PRODUCT_CATEGORIES = [
   'DRBS',
   'AngBar',
@@ -79,28 +89,159 @@ const productDisplayName = record => {
   return normalizedCategory || normalizedProduct || normalizeProductName(`${category} ${productName}`) || '';
 };
 
+/**
+ * Extract unit weight in KG from inventory description.
+ * Supports formats like: (10.00kgs), (12.50kgs), (5.80kgs)
+ * Also supports: 10.00kgs, 10.00 kg, 10kgs
+ */
 const extractUnitWeightKg = value => {
-  const match = normalizeText(value).match(/([\d,.]+)\s*kgs?/i);
-  const parsed = match ? Number(String(match[1]).replace(/,/g, '')) : 0;
-  return Number.isFinite(parsed) ? parsed : 0;
+  const text = normalizeText(value);
+  
+  // Primary pattern: match weight inside parentheses with 'kgs' suffix
+  // Examples: (10.00kgs), (12.50kgs), (5.80kgs)
+  const parenMatch = text.match(/\((\d+\.?\d*)\s*kgs?\)/i);
+  if (parenMatch) {
+    return parseNumeric(parenMatch[1]);
+  }
+  
+  // Secondary pattern: match weight with 'kgs' or 'kg' suffix (without parentheses)
+  // Examples: 10.00kgs, 10.00 kg, 10kgs
+  const match = text.match(/(\d+\.?\d*)\s*(?:kgs?|kg)\b/i);
+  return match ? parseNumeric(match[1]) : 0;
 };
 
 const computeProductTons = record => {
-  const explicitTons = Number(record?.tons);
+  const explicitTons = parseNumeric(record?.tons);
   if (Number.isFinite(explicitTons) && explicitTons > 0) return explicitTons;
-  const quantity = Number(record?.quantity ?? record?.qty) || 0;
+  const quantity = parseNumeric(record?.quantity ?? record?.qty);
+  if (!quantity || quantity <= 0) return 0;
   const unit = productKey(record?.unit);
   if (unit === 'TON' || unit === 'TONS') return quantity;
-  const weightKg = Number(record?.weightKgs ?? record?.unitWeightKg ?? record?.kgs) || extractUnitWeightKg(record?.productName);
-  if (!quantity || !weightKg) return 0;
+  const weightKg = parseNumeric(
+    record?.weightKgs
+    ?? record?.weightKg
+    ?? record?.unitWeightKg
+    ?? record?.kgs
+    ?? record?.weight
+  ) || extractUnitWeightKg(record?.productName);
+  if (!weightKg || weightKg <= 0) return 0;
   return (weightKg * quantity) / 1000;
+};
+
+/**
+ * Round tons value to 2 decimal places
+ */
+const roundTons = value => {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 100) / 100 : 0;
+};
+
+/**
+ * Round percentage value to 2 decimal places
+ */
+const roundPercentage = value => {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 100) / 100 : 0;
+};
+
+/**
+ * Compute product breakdown with tons and percentages
+ * @param {Array} products - Array of product records
+ * @param {Object} options - Options for filtering (dateRange, filters)
+ * @returns {Object} - { totalTons, productBreakdown: [{ name, tons, percentage }] }
+ */
+const computeProductBreakdown = (products, options = {}) => {
+  const { dateRange, filters } = options;
+  
+  // Filter products based on options
+  let filteredProducts = Array.isArray(products) ? products : [];
+  
+  if (dateRange) {
+    const { startDate, endDate } = dateRange;
+    if (startDate) {
+      const start = new Date(startDate);
+      filteredProducts = filteredProducts.filter(p => {
+        if (!p.date) return true;
+        const productDate = p.date instanceof Date ? p.date : new Date(p.date);
+        return productDate >= start;
+      });
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      filteredProducts = filteredProducts.filter(p => {
+        if (!p.date) return true;
+        const productDate = p.date instanceof Date ? p.date : new Date(p.date);
+        return productDate <= end;
+      });
+    }
+  }
+  
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!value || value === 'all' || value === 'All Months') return;
+      filteredProducts = filteredProducts.filter(p => {
+        const productValue = p[key];
+        if (!productValue) return false;
+        return String(productValue).toUpperCase() === String(value).toUpperCase();
+      });
+    });
+  }
+  
+  // Group by product category/name and calculate tons
+  const productMap = new Map();
+  
+  filteredProducts.forEach(product => {
+    // Skip products without valid weight
+    const productName = productDisplayName(product);
+    if (!productName) return;
+    
+    const key = normalizeProductGroupKey(productName);
+    if (!key || isBlockedProductName(key)) return;
+    
+    const tons = roundTons(computeProductTons(product));
+    if (tons <= 0) return;
+    
+    const current = productMap.get(key) || { name: productName, totalTons: 0 };
+    current.totalTons += tons;
+    productMap.set(key, current);
+  });
+  
+  // Calculate total tons
+  let totalTons = 0;
+  productMap.forEach(item => {
+    totalTons += item.totalTons;
+  });
+  totalTons = roundTons(totalTons);
+  
+  // Build product breakdown with percentages
+  const productBreakdown = [];
+  productMap.forEach(item => {
+    const tons = roundTons(item.totalTons);
+    const percentage = totalTons > 0 ? roundPercentage((tons / totalTons) * 100) : 0;
+    productBreakdown.push({
+      name: item.name,
+      tons,
+      percentage,
+    });
+  });
+  
+  // Sort by tons descending
+  productBreakdown.sort((a, b) => b.tons - a.tons);
+  
+  return {
+    totalTons,
+    productBreakdown,
+  };
 };
 
 module.exports = {
   PRODUCT_CATEGORIES,
+  computeProductBreakdown,
   computeProductTons,
   extractUnitWeightKg,
   normalizeProductGroupKey,
   normalizeProductName,
   productDisplayName,
+  roundPercentage,
+  roundTons,
 };
