@@ -1,5 +1,5 @@
 import {
-  computeProductTons,
+  computeInventoryProductTons,
   extractUnitWeightKg,
   normalizeProductGroupKey,
   productDisplayName
@@ -53,6 +53,12 @@ const resolveGkFromFob = (gkValue, fobValue) => {
   const gk = toNumber(gkValue);
   return gk !== 0 ? gk : toNumber(fobValue);
 };
+
+const formatPeso = value => new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+  maximumFractionDigits: 0
+}).format(toNumber(value));
 
 const normalizeDateString = value => {
   const raw = normalize(value);
@@ -162,7 +168,7 @@ const pickCounterPerformance = (totals, fallback = 'Retention') => {
   return normalizeCounterPerformance(winner || fallback);
 };
 
-const productTons = record => computeProductTons(record);
+const productTons = record => computeInventoryProductTons(record);
 const isBlockedProductGroup = value => normalizeProductGroupKey(value) === 'TUBULAR';
 const cleanProductGroupLabel = value => {
   const label = normalizeName(value);
@@ -244,10 +250,12 @@ const buildCounterDistribution = (records = []) => {
     const key = companyName.toUpperCase();
     const performance = normalizeCounterPerformance(resolveCounterValue(record));
     const current = companies.get(key) || {
+      sales: 0,
       performanceTotals: new Map(),
       bestPerformance: 'Retention'
     };
 
+    current.sales += toNumber(record.grossSales || record.sales);
     current.performanceTotals.set(performance, (current.performanceTotals.get(performance) || 0) + 1);
     if (counterPerformanceRank(performance) > counterPerformanceRank(current.bestPerformance)) {
       current.bestPerformance = performance;
@@ -256,19 +264,26 @@ const buildCounterDistribution = (records = []) => {
   });
 
   const totals = new Map([
-    ['Acquisition', { label: 'Acquisition', count: 0 }],
-    ['Retention', { label: 'Retention', count: 0 }],
-    ['Revival', { label: 'Revival', count: 0 }]
+    ['Acquisition', { label: 'Acquisition', count: 0, amount: 0 }],
+    ['Retention', { label: 'Retention', count: 0, amount: 0 }],
+    ['Revival', { label: 'Revival', count: 0, amount: 0 }]
   ]);
 
   companies.forEach(company => {
     const bucket = pickCounterPerformance(company.performanceTotals, company.bestPerformance || 'Retention');
-    const current = totals.get(bucket) || { label: bucket, count: 0 };
+    const current = totals.get(bucket) || { label: bucket, count: 0, amount: 0 };
     current.count += 1;
+    current.amount += company.sales;
     totals.set(bucket, current);
   });
 
-  return ['Acquisition', 'Retention', 'Revival'].map(label => totals.get(label) || { label, count: 0 });
+  return ['Acquisition', 'Retention', 'Revival'].map(label => {
+    const bucket = totals.get(label) || { label, count: 0, amount: 0 };
+    return {
+      ...bucket,
+      amountLabel: formatPeso(bucket.amount)
+    };
+  });
 };
 
 const validateGroupedProductTotals = (records, groupedProducts) => {
@@ -704,14 +719,19 @@ const buildLiveData = (records, productRecords = [], options = {}) => {
       sales: totalSales,
       gk: totalGk,
       fob: totalFob,
-      tons: Math.round(totalTons * 10) / 10,
+      tons: Math.round(totalTons * 100) / 100,
       inventoryQuantity: Math.round(totalProductQuantity),
       companies: companyGroups.length,
       reps: activeRepCount
     },
     salesPerformance: buildSalesPerformance(records, options.period),
     branchData: branchGroups.map(group => ({ label: group.label, count: group.value })),
-    counterData: counterGroups.map(group => ({ label: group.label, count: group.count })),
+    counterData: counterGroups.map(group => ({
+      label: group.label,
+      count: group.count,
+      amount: group.amount,
+      amountLabel: group.amountLabel
+    })),
     sourceData: groupRecords(records, record => record.leadSource || 'Unspecified', () => 1).map(group => {
       const sourceRows = records.filter(record => entityKey(record.leadSource || 'Unspecified') === entityKey(group.label));
       return {

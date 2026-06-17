@@ -35,7 +35,8 @@ const validProductNames = new Set([
   'WELDING ROD',
   'SQUARE BAR',
   'STAINLESS SHEET',
-  'COLD ROLLED SHAFTING'
+  'COLD ROLLED SHAFTING',
+  'OTHERS'
 ]);
 
 const toNumber = value => {
@@ -50,6 +51,11 @@ const parseDateInputValue = value => {
 };
 
 const formatCurrency = value => `PHP ${Math.round(toNumber(value)).toLocaleString()}`;
+const formatPeso = value => new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+  maximumFractionDigits: 0
+}).format(toNumber(value));
 
 const formatCompactCurrency = value => {
   const amount = toNumber(value);
@@ -61,7 +67,7 @@ const formatCompactCurrency = value => {
 
 const formatTons = value => {
   const tons = toNumber(value);
-  return `${tons.toLocaleString(undefined, { minimumFractionDigits: tons && tons < 10 ? 1 : 0, maximumFractionDigits: 1 })} TONS`;
+  return `${tons.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TONS`;
 };
 
 const rowRepLabel = row => String(
@@ -229,7 +235,9 @@ const buildMetricCards = liveData => {
 
 const displayProductName = product => {
   const label = product.label || product.name || '';
-  return validProductNames.has(label) ? label : normalizeProductName(label);
+  if (validProductNames.has(label)) return label;
+  const normalized = normalizeProductName(label);
+  return normalized || (label ? 'OTHERS' : '');
 };
 
 const buildProcessedProductBreakdownData = products => {
@@ -423,16 +431,17 @@ const buildCompanyRankingData = (liveData, limit = 10) => (
 );
 
 const buildCompanyPerformanceCounters = companies => {
-  const counts = new Map(counterBuckets.map(label => [label, { label, count: 0 }]));
+  const counts = new Map(counterBuckets.map(label => [label, { label, count: 0, amount: 0 }]));
 
   (Array.isArray(companies) ? companies : []).forEach(company => {
     const bucket = normalizeCompanyPerformance(company.salesPerformance);
-    const current = counts.get(bucket) || { label: bucket, count: 0 };
+    const current = counts.get(bucket) || { label: bucket, count: 0, amount: 0 };
     current.count += 1;
+    current.amount += toNumber(company.totalSalesAmount ?? company.value);
     counts.set(bucket, current);
   });
 
-  return counterBuckets.map(label => counts.get(label) || { label, count: 0 });
+  return counterBuckets.map(label => counts.get(label) || { label, count: 0, amount: 0 });
 };
 
 const getRepRankingMetric = (rep, metric = 'all') => {
@@ -521,6 +530,7 @@ const buildPresentationCounters = counters => {
     ...counter,
     label: counter.displayLabel || counterDisplayLabels[counter.label] || counter.label,
     rawLabel: counter.label,
+    amountLabel: formatPeso(counter.amount),
     percentage: total ? Math.round((toNumber(counter.count) / total) * 1000) / 10 : 0,
     color: counterColors[counter.label] || '#8b6453'
   }));
@@ -627,8 +637,12 @@ const buildPresentationData = analytics => {
         tons: product.tons,
         sales: product.sales
       })),
-      counterRows: counters.map(counter => ({ label: counter.label, count: counter.count, percentage: counter.percentage })),
-      repRows: rankedReps.map(rep => ({ name: rep.name, sales: rep.rawSales, gk: rep.rawGk }))
+      repRows: rankedReps.map(rep => ({ name: rep.name, sales: rep.rawSales, gk: rep.rawGk })),
+      counterRows: counters.map(counter => ({
+        label: counter.label,
+        count: counter.count,
+        amount: counter.amount
+      }))
     }
   };
 };

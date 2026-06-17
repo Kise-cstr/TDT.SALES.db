@@ -32,7 +32,7 @@ const PRODUCT_CATEGORIES = [
   'GI/BI Pipe',
   'CRS (Cold Rolled Shafting)',
   'BI/GI Sheets',
-  'Purlins',
+  'C Purlins',
   'Rectangular Tube',
   'Square Tube',
   'GIW (Galvanized Iron Wire)',
@@ -55,7 +55,7 @@ const PRODUCT_ALIASES = [
   { name: 'FLAT BAR', pattern: /\bFLAT\s+BARS?\b|\bFB\s*\d*\b|\bFB\d+\b/ },
   { name: 'STAINLESS SHEET', pattern: /\bSTAINLESS(?:\s+STEEL)?\s+SHEETS?\b|\bSSHT\b/ },
   { name: 'BI/GI SHEETS', pattern: /\b(BI|GI)\b.*\bSHEETS?\b|\bSHEETS?\b.*\b(BI|GI)\b/ },
-  { name: 'PURLINS', pattern: /\bPURLINS?\b|\bC\s*PURLINS?\b/ },
+  { name: 'C PURLINS', pattern: /\bC\s*PURLINS?\b|\bPURLINS?\b/ },
   { name: 'GIW', pattern: /\bGIW\b|\bGALVANIZED\s+IRON\s+WIRE\b|\bG\.?I\.?\s*WIRE\b/ },
   { name: 'RECTANGULAR TUBE', pattern: /\bRECTANGULAR\s+TUBES?\b|\bRECT\s+TUBES?\b|\bRT\s*\d+\b|\bRT\d+\b/ },
   { name: 'SQUARE TUBE', pattern: /\bSQUARE\s+TUBES?\b|\bSQ\s+TUBES?\b|\bST\s*\d+\b|\bST\d+\b/ },
@@ -73,6 +73,7 @@ const normalizeProductGroupKey = value => {
     .replace(/\bGI\s*\/\s*BI\s+PIPES?\b/g, 'GI/BI PIPES')
     .replace(/\bBI\s*\/\s*GI\s+PIPES?\b/g, 'GI/BI PIPES')
     .replace(/\bPLAIN\s+ROUND\s*BAR\b/g, 'PLAIN ROUND BAR')
+    .replace(/\bC\s*PURLINS?\b/g, 'C PURLINS')
     .replace(/\bCOLD\s+ROLLED\s+SHAFTING\b/g, 'COLD ROLLED SHAFTING');
   return key;
 };
@@ -84,9 +85,10 @@ const productDisplayName = record => {
   const productName = normalizeText(record?.productName);
   const normalizedProduct = normalizeProductName(productName);
   const normalizedCategory = normalizeProductName(category);
+  const fallback = category || productName ? 'OTHERS' : '';
   if (isBlockedProductName(productName)) return normalizedCategory;
   if (isBlockedProductName(category)) return normalizedProduct;
-  return normalizedCategory || normalizedProduct || normalizeProductName(`${category} ${productName}`) || '';
+  return normalizedCategory || normalizedProduct || normalizeProductName(`${category} ${productName}`) || fallback;
 };
 
 /**
@@ -96,23 +98,34 @@ const productDisplayName = record => {
  */
 const extractUnitWeightKg = value => {
   const text = normalizeText(value);
-  
-  // Primary pattern: match weight inside parentheses with 'kgs' suffix
-  // Examples: (10.00kgs), (12.50kgs), (5.80kgs)
-  const parenMatch = text.match(/\((\d+\.?\d*)\s*kgs?\)/i);
-  if (parenMatch) {
-    return parseNumeric(parenMatch[1]);
+  if (!text) return 0;
+
+  for (const parenMatch of text.matchAll(/\(([^)]*)\)/g)) {
+    const weightMatch = parenMatch[1].match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kg)\b/i);
+    if (weightMatch) return parseNumeric(weightMatch[1]);
   }
-  
-  // Secondary pattern: match weight with 'kgs' or 'kg' suffix (without parentheses)
-  // Examples: 10.00kgs, 10.00 kg, 10kgs
-  const match = text.match(/(\d+\.?\d*)\s*(?:kgs?|kg)\b/i);
+
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kg)\b/i);
   return match ? parseNumeric(match[1]) : 0;
 };
 
+const computeInventoryProductTons = record => {
+  const quantity = parseNumeric(record?.quantity ?? record?.qty);
+  if (!quantity || quantity <= 0) return 0;
+
+  const inventoryText = normalizeText(
+    record?.productName
+    ?? record?.description
+    ?? record?.productDescription
+    ?? record?.inventoryDescription
+    ?? record?.name
+  );
+  const weightKg = extractUnitWeightKg(inventoryText);
+  if (!weightKg || weightKg <= 0) return 0;
+  return (weightKg * quantity) / 1000;
+};
+
 const computeProductTons = record => {
-  const explicitTons = parseNumeric(record?.tons);
-  if (Number.isFinite(explicitTons) && explicitTons > 0) return explicitTons;
   const quantity = parseNumeric(record?.quantity ?? record?.qty);
   if (!quantity || quantity <= 0) return 0;
   const unit = productKey(record?.unit);
@@ -142,6 +155,66 @@ const roundTons = value => {
 const roundPercentage = value => {
   const number = Number(value);
   return Number.isFinite(number) ? Math.round(number * 100) / 100 : 0;
+};
+
+const formatAuditRow = (product, index) => {
+  const inventory = normalizeText(
+    product?.productName
+    ?? product?.description
+    ?? product?.productDescription
+    ?? product?.inventoryDescription
+    ?? product?.name
+  );
+  const quantity = parseNumeric(product?.quantity ?? product?.qty);
+  const weightKg = extractUnitWeightKg(inventory);
+  const lineTons = roundTons((weightKg * quantity) / 1000);
+  const category = productDisplayName(product) || (inventory ? 'OTHERS' : '');
+
+  return {
+    row: index + 1,
+    inventory,
+    weightKg,
+    quantity,
+    lineTons,
+    category: category || 'UNMAPPED',
+    included: Boolean(inventory && quantity > 0 && weightKg > 0),
+  };
+};
+
+const buildProductTonAuditReport = (products = [], options = {}) => {
+  const rows = [];
+  const categoryTotals = new Map();
+  let totalTons = 0;
+
+  (Array.isArray(products) ? products : []).forEach((product, index) => {
+    const row = formatAuditRow(product, index);
+    rows.push(row);
+    if (options.log) {
+      console.log('[product-ton-audit] row', row);
+    }
+
+    if (!row.included) return;
+    totalTons += row.lineTons;
+    categoryTotals.set(row.category, (categoryTotals.get(row.category) || 0) + row.lineTons);
+  });
+
+  const categories = Array.from(categoryTotals.entries())
+    .map(([category, tons]) => ({
+      category,
+      tons: roundTons(tons),
+    }))
+    .sort((a, b) => b.tons - a.tons || String(a.category).localeCompare(String(b.category)));
+
+  if (options.log) {
+    console.log('[product-ton-audit] category totals', categories);
+    console.log('[product-ton-audit] total tons', roundTons(totalTons));
+  }
+
+  return {
+    rows,
+    categories,
+    totalTons: roundTons(totalTons),
+  };
 };
 
 /**
@@ -198,7 +271,7 @@ const computeProductBreakdown = (products, options = {}) => {
     const key = normalizeProductGroupKey(productName);
     if (!key || isBlockedProductName(key)) return;
     
-    const tons = roundTons(computeProductTons(product));
+    const tons = roundTons(computeInventoryProductTons(product));
     if (tons <= 0) return;
     
     const current = productMap.get(key) || { name: productName, totalTons: 0 };
@@ -238,6 +311,8 @@ module.exports = {
   PRODUCT_CATEGORIES,
   computeProductBreakdown,
   computeProductTons,
+  computeInventoryProductTons,
+  buildProductTonAuditReport,
   extractUnitWeightKg,
   normalizeProductGroupKey,
   normalizeProductName,

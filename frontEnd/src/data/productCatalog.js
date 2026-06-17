@@ -11,7 +11,7 @@ export const PRODUCT_CATEGORIES = [
   'GI/BI Pipe',
   'CRS (Cold Rolled Shafting)',
   'BI/GI Sheets',
-  'Purlins',
+  'C Purlins',
   'Rectangular Tube',
   'Square Tube',
   'GIW (Galvanized Iron Wire)',
@@ -55,7 +55,7 @@ const PRODUCT_ALIASES = [
   { name: 'FLAT BAR', pattern: /\bFLAT\s+BARS?\b|\bFB\s*\d*\b|\bFB\d+\b/ },
   { name: 'STAINLESS SHEET', pattern: /\bSTAINLESS(?:\s+STEEL)?\s+SHEETS?\b|\bSSHT\b/ },
   { name: 'BI/GI SHEETS', pattern: /\b(BI|GI)\b.*\bSHEETS?\b|\bSHEETS?\b.*\b(BI|GI)\b/ },
-  { name: 'PURLINS', pattern: /\bPURLINS?\b|\bC\s*PURLINS?\b/ },
+  { name: 'C PURLINS', pattern: /\bC\s*PURLINS?\b|\bPURLINS?\b/ },
   { name: 'GIW', pattern: /\bGIW\b|\bGALVANIZED\s+IRON\s+WIRE\b|\bG\.?I\.?\s*WIRE\b/ },
   { name: 'RECTANGULAR TUBE', pattern: /\bRECTANGULAR\s+TUBES?\b|\bRECT\s+TUBES?\b|\bRT\s*\d+\b|\bRT\d+\b/ },
   { name: 'SQUARE TUBE', pattern: /\bSQUARE\s+TUBES?\b|\bSQ\s+TUBES?\b|\bST\s*\d+\b|\bST\d+\b/ }
@@ -73,6 +73,7 @@ export const normalizeProductGroupKey = value => (
     .replace(/\bGI\s*\/\s*BI\s+PIPES?\b/g, 'GI/BI PIPES')
     .replace(/\bBI\s*\/\s*GI\s+PIPES?\b/g, 'GI/BI PIPES')
     .replace(/\bPLAIN\s+ROUND\s*BAR\b/g, 'PLAIN ROUND BAR')
+    .replace(/\bC\s*PURLINS?\b/g, 'C PURLINS')
     .replace(/\bCOLD\s+ROLLED\s+SHAFTING\b/g, 'COLD ROLLED SHAFTING')
 );
 
@@ -83,20 +84,44 @@ export const productDisplayName = record => {
   const productName = normalizeText(record?.productName);
   const normalizedProduct = normalizeProductName(productName);
   const normalizedCategory = normalizeProductName(category);
+  const fallback = category || productName ? 'OTHERS' : '';
   if (isBlockedProductName(productName)) return normalizedCategory;
   if (isBlockedProductName(category)) return normalizedProduct;
-  return normalizedCategory || normalizedProduct || normalizeProductName(`${category} ${productName}`) || '';
+  return normalizedCategory || normalizedProduct || normalizeProductName(`${category} ${productName}`) || fallback;
 };
 
 export const extractUnitWeightKg = value => {
-  const match = normalizeText(value).match(/([\d,.]+)\s*(?:kgs?|kg)\b/i);
+  const text = normalizeText(value);
+  if (!text) return 0;
+
+  for (const parenMatch of text.matchAll(/\(([^)]*)\)/g)) {
+    const weightMatch = parenMatch[1].match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kg)\b/i);
+    if (weightMatch) return parseNumeric(weightMatch[1]);
+  }
+
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kg)\b/i);
   return match ? parseNumeric(match[1]) : 0;
 };
 
-export const computeProductTons = record => {
-  const explicitTons = parseNumeric(record?.tons);
-  if (Number.isFinite(explicitTons) && explicitTons > 0) return explicitTons;
+export const computeInventoryProductTons = record => {
   const quantity = parseNumeric(record?.quantity ?? record?.qty);
+  if (!quantity || quantity <= 0) return 0;
+
+  const inventoryText = normalizeText(
+    record?.productName
+    ?? record?.description
+    ?? record?.productDescription
+    ?? record?.inventoryDescription
+    ?? record?.name
+  );
+  const weightKg = extractUnitWeightKg(inventoryText);
+  if (!weightKg || weightKg <= 0) return 0;
+  return (weightKg * quantity) / 1000;
+};
+
+export const computeProductTons = record => {
+  const quantity = parseNumeric(record?.quantity ?? record?.qty);
+  if (!quantity || quantity <= 0) return 0;
   const unit = productKey(record?.unit);
   if (unit === 'TON' || unit === 'TONS') return quantity;
   const weightKg = parseNumeric(
@@ -106,6 +131,6 @@ export const computeProductTons = record => {
     ?? record?.kgs
     ?? record?.weight
   ) || extractUnitWeightKg(record?.productName);
-  if (!quantity || !weightKg) return 0;
+  if (!weightKg || weightKg <= 0) return 0;
   return (weightKg * quantity) / 1000;
 };

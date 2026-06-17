@@ -41,6 +41,11 @@ const barColorByKey = {
   revenue: actualSalesColor,
   target: targetSalesColor
 };
+const formatPeso = value => new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+  maximumFractionDigits: 0
+}).format(Number(value) || 0);
 const initialFilters = {
   period: 'Monthly',
   range: 'All Time',
@@ -51,6 +56,19 @@ const initialFilters = {
 
 function TooltipBox({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const firstItem = payload[0];
+  const point = firstItem?.payload || {};
+  const isPerformanceCounter = point && typeof point.count !== 'undefined' && typeof point.amount !== 'undefined';
+
+  if (isPerformanceCounter) {
+    return (
+      <div className="enterprise-tooltip">
+        <strong>{point.displayLabel || label || firstItem?.name}</strong>
+        <span>Companies: {Number(point.count || 0).toLocaleString()}</span>
+        <span>Amount: {point.amountLabel || formatPeso(point.amount)}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="enterprise-tooltip">

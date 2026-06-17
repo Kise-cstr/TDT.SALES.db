@@ -50,6 +50,12 @@ const formatCompactCurrency = value => {
   return `PHP ${Math.round(amount).toLocaleString()}`;
 };
 
+const formatPeso = value => new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+  maximumFractionDigits: 0
+}).format(toNumber(value));
+
 const normalizeDateRangeLabel = value => {
   const label = String(value || 'All Time').trim();
   const lower = label.toLowerCase();
@@ -1333,7 +1339,7 @@ function Counter({ data, enlarged = false }) {
 
   return (
     <motion.article className={`dashboard-card counter-card${enlarged ? ' is-enlarged' : ''}`} variants={panelMotion}>
-      <CardHeader title="Sales Performance" subtitle="Acquisition, retention, and revival" />
+      <CardHeader title="Sales Performance" subtitle="Unique companies and gross sales by performance" />
       <div className="chart-container counter-bar-chart" onMouseLeave={() => { setActiveCounter(null); setTooltip(null); }}>
         <PresentationTooltip tooltip={tooltip} />
         <svg
@@ -1391,7 +1397,10 @@ function Counter({ data, enlarged = false }) {
                   setTooltip({
                     ...getLocalPointer(event),
                     title: label,
-                    lines: [`Total: ${value.toLocaleString()}`]
+                    lines: [
+                      `Companies: ${value.toLocaleString()}`,
+                      `Amount: ${counter.amountLabel || formatPeso(counter.amount)}`
+                    ]
                   });
                 }}
               >

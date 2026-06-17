@@ -17,6 +17,7 @@ const assert = require('node:assert');
 const {
   extractUnitWeightKg,
   computeProductTons,
+  computeInventoryProductTons,
   computeProductBreakdown,
   roundTons,
   roundPercentage,
@@ -49,6 +50,8 @@ describe('Product Tons Calculation Logic', () => {
 
     it('should extract weight from format without parentheses', () => {
       assert.strictEqual(extractUnitWeightKg('AB018 Angle Bar 10.00kgs'), 10);
+      assert.strictEqual(extractUnitWeightKg('AB018 actual 10.00kgs'), 10);
+      assert.strictEqual(extractUnitWeightKg('AB018 actual 10kgs'), 10);
       assert.strictEqual(extractUnitWeightKg('DRB012 Deformed Bar 12.50 kg'), 12.5);
       assert.strictEqual(extractUnitWeightKg('MS001 MS Plate 5.80kg'), 5.8);
     });
@@ -62,8 +65,6 @@ describe('Product Tons Calculation Logic', () => {
     });
 
     it('should handle edge cases with weight patterns', () => {
-      // When comma is in the number, the secondary pattern picks up the last numeric part
-      // This is expected behavior - comma-separated decimals aren't standard in this format
       assert.strictEqual(extractUnitWeightKg('Product (10,50kgs)'), 50);
       
       // Multiple numbers but only weight pattern should match
@@ -128,14 +129,14 @@ describe('Product Tons Calculation Logic', () => {
       assert.strictEqual(result, 5);
     });
 
-    it('should use explicit tons if provided', () => {
-      const result = computeProductTons({ 
-        productName: 'Some product',
-        qty: 100,
-        weightKgs: 10,
+    it('should compute tons from inventory descriptions only', () => {
+      const result = computeInventoryProductTons({
+        productName: 'WF012 (Wide Flange, 6M (135.00kgs))',
+        qty: 500,
+        weightKgs: 999,
         tons: 2.5
       });
-      assert.strictEqual(result, 2.5);
+      assert.strictEqual(result, 67.5);
     });
   });
 
@@ -237,6 +238,18 @@ describe('Product Tons Calculation Logic', () => {
       assert.strictEqual(result.productBreakdown[0].name, 'ANGLE BAR');
     });
 
+    it('should bucket unmapped inventory into OTHERS', () => {
+      const products = [
+        { productName: 'MISC ITEM (10.00kgs)', qty: 25, category: 'Miscellaneous' },
+      ];
+
+      const result = computeProductBreakdown(products);
+
+      assert.strictEqual(result.totalTons, 0.25);
+      assert.strictEqual(result.productBreakdown.length, 1);
+      assert.strictEqual(result.productBreakdown[0].name, 'OTHERS');
+    });
+
     it('should handle empty products array', () => {
       const result = computeProductBreakdown([]);
 
@@ -331,6 +344,15 @@ describe('Product Tons Calculation Logic', () => {
       assert.strictEqual(angleBar.tons, 180.25);
       // 180.25 / 430.75 × 100 = 41.8450... rounds to 41.85
       assert.strictEqual(angleBar.percentage, 41.85);
+    });
+
+    it('should match the SP inventory formula for a sample row', () => {
+      const result = computeInventoryProductTons({
+        productName: 'AB018 (Angle Bar, 3mm x 38mm x 38mm x 6M Yellow (10.00kgs))',
+        qty: 150
+      });
+
+      assert.strictEqual(result, 1.5);
     });
   });
 });

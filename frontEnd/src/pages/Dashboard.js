@@ -278,7 +278,7 @@ const MainDashboard = memo(function MainDashboard() {
       <section className="enterprise-grid enterprise-grid-two">
         <EnterpriseChart
           title="Sales Performance"
-          subtitle="Closed deals, retention, and acquisition"
+          subtitle="Unique companies and gross sales by performance"
           data={activeCounterData}
           keys={['count']}
         />

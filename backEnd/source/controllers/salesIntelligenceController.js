@@ -2,7 +2,8 @@ const multer = require('multer');
 const prisma = require('../config/db');
 const {
   computeProductBreakdown,
-  computeProductTons,
+  computeInventoryProductTons,
+  buildProductTonAuditReport,
   extractUnitWeightKg,
   normalizeProductGroupKey,
 } = require('../services/productCatalog');
@@ -207,7 +208,6 @@ const parseSalesProducts = rows => {
     if (!isProductRow(label, metrics)) return;
 
     const qty = toNumber(metrics[0]);
-    const weightKgs = extractUnitWeightKg(label);
     const category = normalizeGroupLabel(activeCategory || label) || 'Uncategorized';
     if (isBlockedProductGroup(category) || isBlockedProductGroup(label)) return;
     records.push({
@@ -223,7 +223,7 @@ const parseSalesProducts = rows => {
       grossMargin: toNumber(metrics[6]),
       grossMarginPct: toNumber(metrics[7]),
       weightKgs,
-      tons: computeProductTons({ productName: label, qty, weightKgs }),
+      tons: computeInventoryProductTons({ productName: label, qty }),
     });
   });
 
@@ -317,6 +317,9 @@ const buildAnalyticsPayload = async (query = {}) => {
     } : undefined,
     filters: query.category ? { category: query.category } : undefined,
   });
+  const productTonAudit = String(query.debugProductTons || '') === '1'
+    ? buildProductTonAuditReport(filteredProducts, { log: true })
+    : null;
 
   const monthlyMap = new Map();
   filteredOrders.forEach(order => {
@@ -364,6 +367,9 @@ const buildAnalyticsPayload = async (query = {}) => {
       topTonnageProducts: topProducts,
       productDistribution: productBreakdownResult.productBreakdown,
     },
+    debug: productTonAudit ? {
+      productTons: productTonAudit
+    } : undefined,
     filters: {
       years: [...new Set(orders.map(row => row.date?.getUTCFullYear()).filter(Boolean))].sort(),
       months: [...new Set(orders.map(row => row.date?.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })).filter(Boolean))],

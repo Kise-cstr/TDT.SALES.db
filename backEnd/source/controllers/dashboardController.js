@@ -6,7 +6,7 @@ const {
 } = require('../services/notificationService');
 const { ensureTimelineSalesSeeded } = require('../services/timelineSalesService');
 const {
-  computeProductTons,
+  computeInventoryProductTons,
   extractUnitWeightKg,
   normalizeProductGroupKey,
   productDisplayName,
@@ -168,7 +168,7 @@ const extractProductCode = value => {
   return match ? match[1] : null;
 };
 
-const productTons = record => computeProductTons(record);
+const productTons = record => computeInventoryProductTons(record);
 
 const parseDate = value => {
   const text = normalize(value);
