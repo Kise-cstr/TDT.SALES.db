@@ -40,6 +40,16 @@ const parseNumeric = value => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const WEIGHT_PATTERN = /(\d+(?:\.\d+)?)\s*kg(?:s)?\b/gi;
+const findLastWeightValue = text => {
+  let lastValue = 0;
+  for (const match of text.matchAll(WEIGHT_PATTERN)) {
+    const parsed = parseNumeric(match[1]);
+    if (parsed > 0) lastValue = parsed;
+  }
+  return lastValue;
+};
+
 const PRODUCT_ALIASES = [
   { name: 'DRBS', pattern: /\bDRB[S]?\b|\bDEFORMED(?:\s+ROUND)?\s*BARS?\b|\bREBARS?\b/ },
   { name: 'ANGLE BAR', pattern: /\bANG(?:LE)?\s*BARS?\b|\bAB\s*\d*\b|\bAB\d+\b/ },
@@ -93,14 +103,39 @@ export const productDisplayName = record => {
 export const extractUnitWeightKg = value => {
   const text = normalizeText(value);
   if (!text) return 0;
+  return findLastWeightValue(text);
+};
 
-  for (const parenMatch of text.matchAll(/\(([^)]*)\)/g)) {
-    const weightMatch = parenMatch[1].match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kg)\b/i);
-    if (weightMatch) return parseNumeric(weightMatch[1]);
-  }
+export const calculateTotalTons = rows => {
+  if (!Array.isArray(rows)) return 0;
 
-  const match = text.match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kg)\b/i);
-  return match ? parseNumeric(match[1]) : 0;
+  return rows.reduce((sum, row) => {
+    const quantity = parseNumeric(
+      row?.quantity
+      ?? row?.qty
+      ?? row?.pcs
+      ?? row?.units
+      ?? row?.totalQty
+      ?? row?.orderQty
+    );
+    if (!quantity || quantity <= 0) return sum;
+
+    const inventoryText = normalizeText(
+      row?.productName
+      ?? row?.description
+      ?? row?.productDescription
+      ?? row?.inventoryDescription
+      ?? row?.name
+      ?? row?.itemDescription
+      ?? row?.particulars
+      ?? row?.material
+      ?? row?.size
+    );
+    const weightKg = extractUnitWeightKg(inventoryText);
+    if (!weightKg || weightKg <= 0) return sum;
+
+    return sum + (weightKg * quantity) / 1000;
+  }, 0);
 };
 
 export const computeInventoryProductTons = record => {

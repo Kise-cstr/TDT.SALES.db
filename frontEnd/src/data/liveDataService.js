@@ -1,4 +1,5 @@
 import {
+  calculateTotalTons,
   computeInventoryProductTons,
   extractUnitWeightKg,
   normalizeProductGroupKey,
@@ -672,7 +673,7 @@ const buildLiveData = (records, productRecords = [], options = {}) => {
   const totalSales = records.reduce((sum, record) => sum + record.grossSales, 0);
   const totalGk = records.reduce((sum, record) => sum + record.gk, 0);
   const totalFob = records.reduce((sum, record) => sum + toNumber(record.fob), 0);
-  const totalTons = productRecords.reduce((sum, record) => sum + productTons(record), 0);
+  const totalTonsKPI = calculateTotalTons(productRecords);
   const totalProductQuantity = productRecords.reduce((sum, record) => sum + toNumber(record.quantity), 0);
   const repRoster = buildRepRoster(records);
   const repGroups = groupRecords(records, normalizeRep, record => record.grossSales);
@@ -719,7 +720,8 @@ const buildLiveData = (records, productRecords = [], options = {}) => {
       sales: totalSales,
       gk: totalGk,
       fob: totalFob,
-      tons: Math.round(totalTons * 100) / 100,
+      tons: Math.round(totalTonsKPI * 100) / 100,
+      totalTonsKPI: Math.round(totalTonsKPI * 100) / 100,
       inventoryQuantity: Math.round(totalProductQuantity),
       companies: companyGroups.length,
       reps: activeRepCount
@@ -906,20 +908,17 @@ export function filterLiveDashboardData(liveData = {}, filters = {}) {
 
   const filteredSalesRows = salesRows.filter(record => matchesDate(record) && matchesBranch(record));
   const filteredProductRows = productRows.filter(record => matchesDate(record) && matchesBranch(record));
-  const branchWideProductRows = productRows.filter(record => matchesDate(record));
   const liveDataResult = buildLiveData(
     filteredSalesRows,
     filteredProductRows,
     { period: filters.timeline && filters.timeline !== 'Disable' ? filters.timeline : filters.period }
   );
 
-  const branchWideTotalTons = Math.round(branchWideProductRows.reduce((sum, record) => sum + productTons(record), 0) * 100) / 100;
-
   return {
     ...liveDataResult,
     totals: {
       ...liveDataResult.totals,
-      allBranchTons: branchWideTotalTons
+      allBranchTons: liveDataResult.totals?.totalTonsKPI ?? liveDataResult.totals?.tons
     }
   };
 }

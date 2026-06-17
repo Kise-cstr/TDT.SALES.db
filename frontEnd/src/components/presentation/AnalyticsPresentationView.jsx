@@ -47,18 +47,24 @@ const compactCurrency = value => {
   return `PHP ${Math.round(amount).toLocaleString()}`;
 };
 
-const formatTons = value => `${toNumber(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} T`;
+const formatTons = value => `${toNumber(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MT`;
 
 const buildLiveAnalytics = liveData => {
-  if (!Array.isArray(liveData?.rawRows) || !liveData.rawRows.length) return null;
+  const hasSalesRows = Array.isArray(liveData?.rawRows) && liveData.rawRows.length > 0;
+  const hasProductRows = Array.isArray(liveData?.productRows) && liveData.productRows.length > 0;
+  if (!hasSalesRows && !hasProductRows) return null;
   const sales = toNumber(liveData.totals?.sales);
   const gk = toNumber(liveData.totals?.fob ?? liveData.totals?.gk);
   const leads = toNumber(liveData.totals?.rows);
-  const closed = liveData.rawRows.filter(row => toNumber(row.grossSales || row.sales) > 0).length;
+  const closed = hasSalesRows ? liveData.rawRows.filter(row => toNumber(row.grossSales || row.sales) > 0).length : 0;
   const topSource = liveData.sourceData?.[0];
   const salesSeries = (liveData.salesPerformance || []).map(row => ({ label: row.label, sales: row.sales, target: row.target || 0 }));
   const productTotal = (liveData.productData || []).reduce((sum, item) => sum + toNumber(item.revenue || item.tons || item.quantity), 0) || 1;
-  const totalTons = toNumber(liveData.totals?.allBranchTons ?? liveData.totals?.tons);
+  const totalTons = toNumber(
+    liveData.totals?.totalTonsKPI
+    ?? liveData.totals?.allBranchTons
+    ?? liveData.totals?.tons
+  );
 
   return {
     metrics: [

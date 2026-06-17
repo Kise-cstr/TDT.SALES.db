@@ -67,10 +67,14 @@ const formatCompactCurrency = value => {
 
 const formatTons = value => {
   const tons = toNumber(value);
-  return `${tons.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TONS`;
+  return `${tons.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MT`;
 };
 
-const resolveDisplayTons = liveData => toNumber(liveData?.totals?.allBranchTons ?? liveData?.totals?.tons);
+const resolveDisplayTons = liveData => toNumber(
+  liveData?.totals?.totalTonsKPI
+  ?? liveData?.totals?.allBranchTons
+  ?? liveData?.totals?.tons
+);
 
 const rowRepLabel = row => String(
   getSalesRepNameFromCode(row?.repCode) || row?.salesRep || row?.repName || row?.repCode || 'Unassigned'
@@ -208,19 +212,20 @@ const buildPresentationCounterData = rows => {
   });
 };
 
-const getSelectedPeriod = (filters = {}) => (
-  filters.timeline && filters.timeline !== 'Disable'
-    ? filters.timeline
-    : filters.period || 'Monthly'
-);
-
 const buildMetricCards = liveData => {
-  if (!liveData?.rawRows?.length) {
+  const totalTons = resolveDisplayTons(liveData);
+  if (!liveData?.rawRows?.length && !liveData?.productRows?.length) {
     return metricCards;
+  }
+  if (!liveData?.rawRows?.length) {
+    return metricCards.map(card => (
+      card.metric === 'tons'
+        ? { ...card, value: formatTons(totalTons) }
+        : card
+    ));
   }
   const topRep = liveData.salesByRep?.[0];
   const totalFob = toNumber(liveData.totals?.fob);
-  const totalTons = resolveDisplayTons(liveData);
   const cards = [
     { metric: 'sales', title: 'Total Gross Sales', value: formatCurrency(liveData.totals?.sales), trend: 'up', trendValue: 'CSV', icon: 'dollar' },
     { metric: 'gk', title: 'GK Value', value: formatCurrency(totalFob), trend: 'up', trendValue: 'Computed FOB', icon: 'chart' },
@@ -655,7 +660,6 @@ export function buildDashboardAnalytics(liveData = getLiveDashboardData(), filte
   const hasLiveRows = Boolean(liveData?.rawRows?.length);
   const hasProductRows = Boolean(liveData?.productRows?.length);
   const filteredLiveData = hasLiveRows || hasProductRows ? filterLiveDashboardData(liveData, filters) : liveData;
-  const selectedPeriod = getSelectedPeriod(filters);
   const useUploadedData = Boolean(filteredLiveData?.rawRows?.length || filteredLiveData?.productRows?.length);
   const activeProductData = useUploadedData && filteredLiveData.productData?.length ? filteredLiveData.productData : productData;
   const processedProductBreakdownData = buildProcessedProductBreakdownData(activeProductData);
@@ -670,7 +674,7 @@ export function buildDashboardAnalytics(liveData = getLiveDashboardData(), filte
     hasLiveRows,
     hasProductRows,
     useUploadedData,
-    cards: buildMetricCards(filteredLiveData, selectedPeriod),
+    cards: buildMetricCards(filteredLiveData),
     salesPerformance: hasLiveRows ? filteredLiveData.salesPerformance : undefined,
     counterData: buildPresentationCounters(buildPresentationCounterData(getActiveDealRows(filteredLiveData?.rawRows || [], filters))),
     sourceData: hasLiveRows ? filteredLiveData.sourceData : undefined,
