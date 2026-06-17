@@ -47,6 +47,8 @@ const compactCurrency = value => {
   return `PHP ${Math.round(amount).toLocaleString()}`;
 };
 
+const formatTons = value => `${toNumber(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} T`;
+
 const buildLiveAnalytics = liveData => {
   if (!Array.isArray(liveData?.rawRows) || !liveData.rawRows.length) return null;
   const sales = toNumber(liveData.totals?.sales);
@@ -56,6 +58,7 @@ const buildLiveAnalytics = liveData => {
   const topSource = liveData.sourceData?.[0];
   const salesSeries = (liveData.salesPerformance || []).map(row => ({ label: row.label, sales: row.sales, target: row.target || 0 }));
   const productTotal = (liveData.productData || []).reduce((sum, item) => sum + toNumber(item.revenue || item.tons || item.quantity), 0) || 1;
+  const totalTons = toNumber(liveData.totals?.allBranchTons ?? liveData.totals?.tons);
 
   return {
     metrics: [
@@ -63,7 +66,7 @@ const buildLiveAnalytics = liveData => {
       { label: 'GK Value', value: compactCurrency(gk), detail: `${sales ? Math.round((gk / sales) * 1000) / 10 : 0}% of GS` },
       { label: 'Leads', value: leads.toLocaleString(), detail: 'From SO Date-filtered data' },
       { label: 'Closed Deals', value: closed.toLocaleString(), detail: `${leads ? Math.round((closed / leads) * 100) : 0}% conversion` },
-      { label: 'Total Tons', value: `${toNumber(liveData.totals?.tons).toLocaleString()} T`, detail: 'Verified product tonnage' },
+      { label: 'Total Tons', value: formatTons(totalTons), detail: 'Verified product tonnage' },
       { label: 'Top Source', value: topSource?.label || 'N/A', detail: `${topSource?.leads || topSource?.count || 0} leads` }
     ],
     dailySales: salesSeries,

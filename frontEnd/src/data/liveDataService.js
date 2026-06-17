@@ -904,9 +904,22 @@ export function filterLiveDashboardData(liveData = {}, filters = {}) {
     return entityKey(record.branch).includes(selectedBranch);
   };
 
-  return buildLiveData(
-    salesRows.filter(record => matchesDate(record) && matchesBranch(record)),
-    productRows.filter(record => matchesDate(record) && matchesBranch(record)),
+  const filteredSalesRows = salesRows.filter(record => matchesDate(record) && matchesBranch(record));
+  const filteredProductRows = productRows.filter(record => matchesDate(record) && matchesBranch(record));
+  const branchWideProductRows = productRows.filter(record => matchesDate(record));
+  const liveDataResult = buildLiveData(
+    filteredSalesRows,
+    filteredProductRows,
     { period: filters.timeline && filters.timeline !== 'Disable' ? filters.timeline : filters.period }
   );
+
+  const branchWideTotalTons = Math.round(branchWideProductRows.reduce((sum, record) => sum + productTons(record), 0) * 100) / 100;
+
+  return {
+    ...liveDataResult,
+    totals: {
+      ...liveDataResult.totals,
+      allBranchTons: branchWideTotalTons
+    }
+  };
 }

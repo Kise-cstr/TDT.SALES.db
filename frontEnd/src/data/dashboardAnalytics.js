@@ -70,6 +70,8 @@ const formatTons = value => {
   return `${tons.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TONS`;
 };
 
+const resolveDisplayTons = liveData => toNumber(liveData?.totals?.allBranchTons ?? liveData?.totals?.tons);
+
 const rowRepLabel = row => String(
   getSalesRepNameFromCode(row?.repCode) || row?.salesRep || row?.repName || row?.repCode || 'Unassigned'
 ).trim() || 'Unassigned';
@@ -218,6 +220,7 @@ const buildMetricCards = liveData => {
   }
   const topRep = liveData.salesByRep?.[0];
   const totalFob = toNumber(liveData.totals?.fob);
+  const totalTons = resolveDisplayTons(liveData);
   const cards = [
     { metric: 'sales', title: 'Total Gross Sales', value: formatCurrency(liveData.totals?.sales), trend: 'up', trendValue: 'CSV', icon: 'dollar' },
     { metric: 'gk', title: 'GK Value', value: formatCurrency(totalFob), trend: 'up', trendValue: 'Computed FOB', icon: 'chart' },
@@ -228,7 +231,7 @@ const buildMetricCards = liveData => {
   return [
     cards[0],
     cards[1],
-    { metric: 'tons', title: 'Total Tons', value: formatTons(liveData.totals?.tons), trend: 'up', trendValue: 'steel volume', icon: 'target' },
+    { metric: 'tons', title: 'Total Tons', value: formatTons(totalTons), trend: 'up', trendValue: 'steel volume', icon: 'target' },
     ...cards.slice(2)
   ];
 };
@@ -570,6 +573,7 @@ const buildPresentationData = analytics => {
   const counters = buildPresentationCounters(buildCompanyPerformanceCounters(companySummaries));
   const presentationProducts = buildPresentationProducts(analytics.processedProductBreakdownData.rows);
   const presentationTerms = buildPresentationTerms(activeDealRows);
+  const totalTons = resolveDisplayTons(liveData);
   const sharedProductTotals = {
     ...analytics.processedProductBreakdownData.totals,
     tons: toNumber(liveData.totals?.tons),
@@ -608,7 +612,7 @@ const buildPresentationData = analytics => {
   }));
 
   const kpis = [
-      ...(isFullCalendarMonthRange ? [{ label: 'Total Tons', value: formatTons(sharedProductTotals.tons), note: 'Total steel tonnage' }] : []),
+      ...(isFullCalendarMonthRange ? [{ label: 'Total Tons', value: formatTons(totalTons), note: 'Total steel tonnage' }] : []),
       { label: 'Number of Transactions', value: String(dealsClosed), note: '' },
       { label: 'Total Gross Sales', value: formatCompactCurrency(periodTotals.sales), note: `${activeDealRows.length} period rows` },
       { label: 'GK Value', value: formatCompactCurrency(periodTotals.fob), note: 'Computed from FOB' },
